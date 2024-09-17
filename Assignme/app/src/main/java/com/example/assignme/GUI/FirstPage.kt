@@ -1,4 +1,4 @@
-package com.example.assignme
+package com.example.assignme.GUI
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -25,34 +27,59 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.example.assignme.ViewModel.MockUserViewModel
+import com.example.assignme.R
+import com.example.assignme.ViewModel.UserProfileProvider
+import com.example.assignme.ViewModel.UserViewModel
 
 
 @Composable
-fun FirstPage(navController: NavController) {
+fun FirstPage(navController: NavController, userViewModel: UserProfileProvider) {
+
+    // Create an instance of UserViewModel
+    val userViewModel: UserViewModel = viewModel()
+
+    val currentUserId = userViewModel.userId.value
+    println("Current userId in firstpage: $currentUserId")
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .safeContentPadding()
+            .statusBarsPadding()
     ) {
         Image(
             painter = painterResource(id = R.drawable.background),
             contentDescription = "Burger layers",
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .safeContentPadding()
+                .statusBarsPadding(),
             contentScale = ContentScale.Crop
         )
 
         Column(
-            modifier = Modifier.fillMaxSize(), // Set a background color to contrast the white icon
+            modifier = Modifier
+                .safeContentPadding()
+                .fillMaxSize()
+                .statusBarsPadding(), // Set a background color to contrast the white icon
             horizontalAlignment = Alignment.CenterHorizontally, // Center horizontally
             verticalArrangement = Arrangement.Top // Arrange content at the top
         ){
 
             //Premium recipe
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(30.dp)
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .safeContentPadding()
+                    .statusBarsPadding()
+                    .fillMaxSize()
+                    .padding(top = 30.dp)
 
             ) {
                 Icon(
@@ -74,9 +101,13 @@ fun FirstPage(navController: NavController) {
 
         Column(
 
-            modifier = Modifier.fillMaxSize(), // Set a background color to contrast the white icon
+            modifier = Modifier
+                .fillMaxSize()
+                .safeContentPadding()
+                .statusBarsPadding()
+                .padding(bottom = 120.dp), // Set a background color to contrast the white icon
             horizontalAlignment = Alignment.CenterHorizontally, // Center horizontally
-            verticalArrangement = Arrangement.Center // Arrange content at the top
+            verticalArrangement = Arrangement.Bottom // Arrange content at the top
         ){
 
             //Login Button
@@ -86,7 +117,7 @@ fun FirstPage(navController: NavController) {
                     .padding(horizontal = 32.dp)
                     .size(width = 206.dp, height = 54.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)), // Set button color
-                shape = RoundedCornerShape(0.dp) // Set the button shape to rectangular
+                shape = RoundedCornerShape(10.dp) // Set the button shape to rectangular
 
             ) {
 
@@ -94,7 +125,7 @@ fun FirstPage(navController: NavController) {
                 Text(text = "Login")
             }
 
-            Spacer(modifier = Modifier.padding(8.dp))
+            Spacer(modifier = Modifier.padding(15.dp))
 
             //Register button
             Button(
@@ -103,7 +134,7 @@ fun FirstPage(navController: NavController) {
                     .padding(horizontal = 32.dp)
                     .size(width = 206.dp, height = 54.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)), // Set button color
-                shape = RoundedCornerShape(0.dp) // Set the button shape to rectangular
+                shape = RoundedCornerShape(10.dp) // Set the button shape to rectangular
 
             ) {
 
@@ -116,6 +147,8 @@ fun FirstPage(navController: NavController) {
 
         Box(modifier = Modifier
             .fillMaxSize()
+            .safeContentPadding()
+            .statusBarsPadding()
             .padding(bottom = 400.dp),
             contentAlignment = Alignment.BottomCenter){
 
@@ -124,3 +157,14 @@ fun FirstPage(navController: NavController) {
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewFirstPage() {
+
+    FirstPage(
+        navController = rememberNavController(),
+        userViewModel = MockUserViewModel()
+    )
+}
+

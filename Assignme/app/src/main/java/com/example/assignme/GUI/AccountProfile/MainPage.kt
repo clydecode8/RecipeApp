@@ -1,4 +1,4 @@
-package com.example.assignme
+package com.example.assignme.GUI.AccountProfile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -27,13 +29,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.example.assignme.R
+import com.example.assignme.ViewModel.UserProfileProvider
+import com.example.assignme.ViewModel.MockUserViewModel
 
 
 @Composable
-fun MainPage(navController: NavController) {
+fun AppFirstPage(navController: NavController, userViewModel: UserProfileProvider) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .safeContentPadding()
+            .statusBarsPadding()
             .background(Color.Black)
     ) {
         Image(
@@ -44,7 +52,10 @@ fun MainPage(navController: NavController) {
         )
 
         Column(
-            modifier = Modifier.fillMaxSize(), // Set a background color to contrast the white icon
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .safeContentPadding(), // Set a background color to contrast the white icon
             horizontalAlignment = Alignment.CenterHorizontally, // Center horizontally
             verticalArrangement = Arrangement.Top // Arrange content at the top
         ){
@@ -74,7 +85,10 @@ fun MainPage(navController: NavController) {
 
         Column(
 
-            modifier = Modifier.fillMaxSize(), // Set a background color to contrast the white icon
+            modifier = Modifier
+                .fillMaxSize()
+                .safeContentPadding()
+                .statusBarsPadding(), // Set a background color to contrast the white icon
             horizontalAlignment = Alignment.CenterHorizontally, // Center horizontally
             verticalArrangement = Arrangement.Center // Arrange content at the top
         ){
@@ -113,7 +127,7 @@ fun MainPage(navController: NavController) {
                     .padding(horizontal = 32.dp)
                     .size(width = 206.dp, height = 54.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)), // Set button color
-                shape = RoundedCornerShape(0.dp) // Set the button shape to rectangular
+                shape = RoundedCornerShape(10.dp) // Set the button shape to rectangular
 
             ) {
 
@@ -123,4 +137,14 @@ fun MainPage(navController: NavController) {
 
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewMainPage() {
+
+    AppFirstPage(
+        navController = rememberNavController(),
+        userViewModel = MockUserViewModel()
+    )
 }
