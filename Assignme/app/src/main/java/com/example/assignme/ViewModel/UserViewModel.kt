@@ -54,22 +54,51 @@ class UserViewModel : ViewModel(), UserProfileProvider {
 
     fun toggleLike(postId: String, liked: Boolean) {
         val db = FirebaseFirestore.getInstance()
+        val currentUserId = _userId.value ?: return
+
+        // 获取当前帖子的点赞信息
         db.collection("posts").document(postId)
-            .update("likes", if (liked) FieldValue.increment(1) else FieldValue.increment(-1))
-            .addOnSuccessListener {
-                fetchPosts() // 刷新帖子以获取最新点赞数量
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    val post = document.toObject(Post::class.java)
+                    post?.let {
+                        val isAlreadyLiked = post.likedUsers.contains(currentUserId)
+
+                        if (liked && !isAlreadyLiked) {
+                            // 如果用户还没有点赞，则进行点赞
+                            db.collection("posts").document(postId)
+                                .update(
+                                    "likes", FieldValue.increment(1),
+                                    "likedUsers", FieldValue.arrayUnion(currentUserId) // 添加用户到 likedUsers 列表
+                                )
+                        } else if (!liked && isAlreadyLiked) {
+                            // 如果用户已经点赞，则取消点赞
+                            db.collection("posts").document(postId)
+                                .update(
+                                    "likes", FieldValue.increment(-1),
+                                    "likedUsers", FieldValue.arrayRemove(currentUserId) // 从 likedUsers 列表中移除用户
+                                )
+                        } else {
+                            // Else case for completeness (no action needed)
+                            Log.d("UserViewModel", "No change in like status")
+                        }
+                    }
+                }
             }
             .addOnFailureListener { e ->
                 Log.w("UserViewModel", "Error updating likes", e)
             }
     }
 
+
     fun addComment(postId: String, comment: Comment) {
         val db = FirebaseFirestore.getInstance()
         val commentData = hashMapOf(
             "userName" to comment.userName,
             "content" to comment.content,
-            "timestamp" to comment.timestamp
+            "timestamp" to comment.timestamp,
+            "userProfileImage" to comment.userProfileImage // 添加头像 URL
         )
 
         db.collection("posts").document(postId).collection("comments")
@@ -82,6 +111,7 @@ class UserViewModel : ViewModel(), UserProfileProvider {
                 Log.w("UserViewModel", "Error adding comment", e)
             }
     }
+
 
     private fun updateCommentCount(postId: String) {
         val db = FirebaseFirestore.getInstance()
@@ -214,16 +244,16 @@ data class Post(
     val content: String = "",
     val imagePath: String? = null,
     val likes: Int = 0,
+    val likedUsers: List<String> = emptyList(), // 存储点赞用户的 ID
     val comments: Int = 0,
     val timestamp: Long = System.currentTimeMillis()
 )
 
+
 data class Comment(
     val userName: String = "",
     val content: String = "",
-    val timestamp: Long = 0L
+    val timestamp: Long = 0L,
+    val userProfileImage: String = ""
 )
-
-
-
 

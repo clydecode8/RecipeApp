@@ -141,12 +141,14 @@ fun PostItem(
     comments: Int,
     postId: String,
     userViewModel: UserViewModel,
-    imagePath: String? = null // 可选参数
+    imagePath: String? = null,
+    likedUsers: List<String> // 传入已点赞用户的 ID 列表
 ) {
-    var liked by remember { mutableStateOf(false) }
-    var showCommentsDialog by remember { mutableStateOf(false) }
+    val currentUserId = userViewModel.userId.value ?: ""
+    var liked by remember { mutableStateOf(likedUsers.contains(currentUserId)) } // 检查用户是否已经点赞
     var currentLikes by remember { mutableStateOf(likes) }
-    var currentComments by remember { mutableStateOf(comments) } // 添加当前评论数量
+    var showCommentsDialog by remember { mutableStateOf(false) }
+    var currentComments by remember { mutableStateOf(comments) }
 
     Card(
         modifier = Modifier
@@ -192,7 +194,7 @@ fun PostItem(
                     userViewModel.toggleLike(postId, liked)
                 }) {
                     Icon(
-                        painter = painterResource(id = R.drawable.like),
+                        painter = painterResource(id = if (liked) R.drawable.like else R.drawable.like),
                         contentDescription = "Like",
                         modifier = Modifier.size(24.dp)
                     )
@@ -202,9 +204,8 @@ fun PostItem(
                     "$currentLikes likes",
                     modifier = Modifier
                         .padding(start = 4.dp)
-                        .align(Alignment.CenterVertically) // 让文本垂直居中
+                        .align(Alignment.CenterVertically)
                 )
-
                 Spacer(modifier = Modifier.weight(1f)) // 占据剩余空间
 
                 IconButton(onClick = { showCommentsDialog = true }) {
@@ -241,18 +242,17 @@ fun PostItem(
 }
 
 
-
 @Composable
 fun CommentsDialog(
     onDismiss: () -> Unit,
     postId: String,
     userViewModel: UserViewModel,
-    currentUserName: String, // Add current userName
-    onCommentAdded: () -> Unit // Callback to trigger UI refresh after comment is added
+    currentUserName: String, // 当前用户的用户名
+    onCommentAdded: () -> Unit // 添加评论后的回调
 ) {
     var commentText by remember { mutableStateOf("") }
 
-    // Observe comments LiveData from ViewModel
+    // 从 ViewModel 获取评论的 LiveData
     val comments by userViewModel.getCommentsForPost(postId).observeAsState(emptyList())
 
     AlertDialog(
@@ -260,10 +260,31 @@ fun CommentsDialog(
         title = { Text("Comments") },
         text = {
             Column {
-                // Display each comment
+                // 显示每条评论
                 comments.forEach { comment ->
-                    Text("${comment.userName}: ${comment.content} at ${userViewModel.formatTimestamp(comment.timestamp)}")
+                    // 使用评论中的头像 URL
+                    val profileImageUrl = comment.userProfileImage.ifEmpty { R.drawable.profile.toString() }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // 显示用户头像
+                        Image(
+                            painter = rememberImagePainter(profileImageUrl),
+                            contentDescription = "Profile picture",
+                            modifier = Modifier
+                                .size(40.dp) // 增加头像大小以提高可见性
+                                .clip(CircleShape)
+                        )
+
+                        // 显示用户名和评论内容
+                        Text(
+                            text = "${comment.userName}: ${comment.content} at ${userViewModel.formatTimestamp(comment.timestamp)}",
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 TextField(
                     value = commentText,
                     onValueChange = { commentText = it },
@@ -277,11 +298,12 @@ fun CommentsDialog(
                     val newComment = Comment(
                         userName = currentUserName,
                         content = commentText,
-                        timestamp = System.currentTimeMillis()
+                        timestamp = System.currentTimeMillis(),
+                        userProfileImage = userViewModel.userProfile.value?.profilePictureUrl ?: ""
                     )
-                    userViewModel.addComment(postId, newComment) // Add comment via ViewModel
-                    onCommentAdded() // Trigger callback to refresh UI or state
-                    commentText = "" // Clear text field
+                    userViewModel.addComment(postId, newComment) // 使用 ViewModel 添加评论
+                    onCommentAdded() // 触发 UI 刷新回调
+                    commentText = "" // 清空评论框
                 }
             ) {
                 Text("Send")
@@ -321,14 +343,11 @@ fun PostList(userViewModel: UserViewModel) {
                     likes = post.likes,
                     comments = post.comments,
                     postId = post.id,
-                    userViewModel = userViewModel
+                    userViewModel = userViewModel,
+                    likedUsers = post.likedUsers // 传入已点赞用户列表
                 )
             }
         }
     }
 }
-
-
-
-
 
