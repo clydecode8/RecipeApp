@@ -27,7 +27,6 @@ import com.example.assignme.AndroidBar.AppTopBar
 import com.example.assignme.R
 import com.example.assignme.ViewModel.MockUserViewModel
 import com.example.assignme.ViewModel.UserProfileProvider
-import com.example.assignme.ViewModel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

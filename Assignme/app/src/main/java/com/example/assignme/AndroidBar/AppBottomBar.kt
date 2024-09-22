@@ -30,7 +30,7 @@ import com.example.assignme.R
 fun AppBottomNavigation(navController: NavController) {
 
     val items = listOf(
-        BottomNavItem("Home", R.drawable.ic_home, "home"),
+        BottomNavItem("Home", R.drawable.ic_home, "recipe_main_page"),
         BottomNavItem("Health", R.drawable.ic_health, "health"),
         BottomNavItem("Add", R.drawable.ic_add, "add", showBadge = true), // Set showBadge to true
         BottomNavItem("Calendar", R.drawable.ic_calendar, "calendar"),

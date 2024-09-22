@@ -11,11 +11,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.assignme.ViewModel.UserViewModel
 import com.example.assignme.ui.theme.AssignmeTheme
+import com.google.firebase.FirebaseApp
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         enableEdgeToEdge()
         setContent {
             AssignmeTheme {

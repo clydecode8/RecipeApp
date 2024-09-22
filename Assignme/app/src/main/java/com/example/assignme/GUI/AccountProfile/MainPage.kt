@@ -122,7 +122,7 @@ fun AppFirstPage(navController: NavController, userViewModel: UserProfileProvide
 
             //Next
             Button(
-                onClick = { navController.navigate("first_page") },
+                onClick = { navController.navigate("recipe_main_page") },
                 modifier = Modifier
                     .padding(horizontal = 32.dp)
                     .size(width = 206.dp, height = 54.dp),

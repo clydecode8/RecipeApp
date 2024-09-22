@@ -2,6 +2,7 @@ package com.example.assignme.GUI.AccountProfile
 
 import android.app.Activity.RESULT_OK
 import android.util.Log
+import android.util.Patterns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -64,7 +65,7 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var auth = FirebaseAuth.getInstance()
+    val auth = FirebaseAuth.getInstance()
     var showErrorDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
@@ -400,16 +401,19 @@ fun login(
     onSuccess: (SignInResult) -> Unit
 ) {
     if (email.isNotEmpty() && password.isNotEmpty()) {
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            onError("Email is badly formatted")
+            return
+        }
+
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-
-                    //Login successful
+                    // Login successful
                     val user = task.result?.user
                     val isNewUser = task.result?.additionalUserInfo?.isNewUser ?: false
                     val signInResult = mapAuthResultToSignInResult(user, isNewUser)
                     onSuccess(signInResult)
-
                 } else {
                     // Login failed, show error
                     val error = task.exception?.localizedMessage ?: "Login failed"
@@ -420,6 +424,7 @@ fun login(
         onError("Please enter email and password")
     }
 }
+
 
 // Function to convert Firebase AuthResult to your SignInResult
 fun mapAuthResultToSignInResult(user: FirebaseUser?, isNewUser: Boolean): SignInResult {
