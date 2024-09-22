@@ -27,8 +27,8 @@ fun RecipeUploadPage(navController: NavController, viewModel: RecipeViewModel = 
 
     // 定义食材列表 (例如这里可以手动定义一个简单的列表)
     val ingredients = listOf(
-        Ingredient(name = "Chicken Breast", amount = "200g", calories = 300),
-        Ingredient(name = "Lettuce", amount = "100g", calories = 15)
+        Ingredient(name = "Chicken Breast", amount = "200g", calories = 300.0),
+        Ingredient(name = "Lettuce", amount = "100g", calories = 15.0)
     )
 
     val instructions = listOf(

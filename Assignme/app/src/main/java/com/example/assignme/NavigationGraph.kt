@@ -26,6 +26,7 @@ import com.example.assignme.GUI.AccountProfile.RecipeApproveScreen
 import com.example.assignme.GUI.AccountProfile.RegisterPage
 import com.example.assignme.GUI.AccountProfile.SocialFeedScreen
 import com.example.assignme.GUI.FirstPage
+import com.example.assignme.GUI.Recipe.CreateRecipe
 import com.example.assignme.GUI.Recipe.RecipeMainPage
 import com.example.assignme.GUI.Recipe.RecipeScreen
 import com.example.assignme.GUI.Recipe.RecipeUploadPage
@@ -137,6 +138,14 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             }
         }
 
+        composable("create_recipe") {
+            val viewModel: RecipeViewModel = viewModel() // Get a ViewModel scoped to CreateRecipe
+            CreateRecipe(
+                navController = navController,
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
 
 
 

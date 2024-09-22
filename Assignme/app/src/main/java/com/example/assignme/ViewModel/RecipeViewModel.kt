@@ -1,5 +1,6 @@
 package com.example.assignme.ViewModel
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -7,10 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.assignme.DataClass.Recipes
 import com.example.assignme.DataClass.Ingredient
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 class RecipeViewModel : ViewModel() {
     private val firestore = FirebaseFirestore.getInstance()
@@ -24,6 +27,8 @@ class RecipeViewModel : ViewModel() {
 
     private val _filteredRecipes = MutableStateFlow<List<Recipes>>(emptyList())
     val filteredRecipes: StateFlow<List<Recipes>> = _filteredRecipes
+
+
     // Fetch recipes from Firestore
     fun fetchRecipes() {
         viewModelScope.launch {
@@ -99,4 +104,22 @@ class RecipeViewModel : ViewModel() {
     fun getRecipeById(recipeId: String): Recipes? {
         return _recipes.value.find { it.id == recipeId }
     }
+
+    fun uploadImageToFirebase(imageUri: Uri, onSuccess: (String) -> Unit) {
+        val storageReference = FirebaseStorage.getInstance().reference
+        val imageRef = storageReference.child("recipe_images/${UUID.randomUUID()}.jpg")
+
+        imageRef.putFile(imageUri).addOnSuccessListener {
+            imageRef.downloadUrl.addOnSuccessListener { uri ->
+                onSuccess(uri.toString())  // Return the download URL
+            }
+        }.addOnFailureListener {
+            // Handle any errors
+        }
+    }
+
+    fun generateRecipeId(): String {
+        return UUID.randomUUID().toString()
+    }
+
 }

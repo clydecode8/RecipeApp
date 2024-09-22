@@ -19,12 +19,12 @@ import com.example.assignme.ViewModel.RecipeViewModel
 import kotlinx.coroutines.FlowPreview
 
 @OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
-@Composable
-fun SearchResultsPage(navController: NavController, viewModel: RecipeViewModel = viewModel()) {
-    val filteredRecipes  by viewModel.filteredRecipes.collectAsState()
-    val allRecipes by viewModel.recipes.collectAsState()
+    @Composable
+    fun SearchResultsPage(navController: NavController, viewModel: RecipeViewModel = viewModel()) {
+        val filteredRecipes  by viewModel.filteredRecipes.collectAsState()
+        val allRecipes by viewModel.recipes.collectAsState()
 
-    var searchQuery by remember { mutableStateOf("") }
+        var searchQuery by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         // 检查所有食谱是否加载成功
         println("All Recipes in SearchResultsPage: ${allRecipes.map { it.title }}")

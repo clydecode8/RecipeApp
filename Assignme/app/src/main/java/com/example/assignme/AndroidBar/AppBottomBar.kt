@@ -1,6 +1,7 @@
 package com.example.assignme.AndroidBar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -32,7 +33,7 @@ fun AppBottomNavigation(navController: NavController) {
     val items = listOf(
         BottomNavItem("Home", R.drawable.ic_home, "recipe_main_page"),
         BottomNavItem("Health", R.drawable.ic_health, "health"),
-        BottomNavItem("Add", R.drawable.ic_add, "add", showBadge = true), // Set showBadge to true
+        BottomNavItem("Add", R.drawable.ic_add, "create_recipe", showBadge = true), // Set showBadge to true
         BottomNavItem("Calendar", R.drawable.ic_calendar, "calendar"),
         BottomNavItem("Chat", R.drawable.ic_chat, "chat")
     )
@@ -90,7 +91,13 @@ fun AppBottomNavigation(navController: NavController) {
         ) {
             HelipadIcon(
                 modifier = Modifier
-                    .size(72.dp) // Adjust size of the HelipadIcon
+                    .size(72.dp)
+                    .clickable { // Only the HelipadIcon is clickable
+                        navController.navigate("create_recipe") {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    }
             )
         }
     }
