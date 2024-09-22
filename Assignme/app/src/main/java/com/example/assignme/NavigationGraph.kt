@@ -25,6 +25,7 @@ import com.example.assignme.GUI.AccountProfile.ProfilePage
 import com.example.assignme.GUI.AccountProfile.RecipeApproveScreen
 import com.example.assignme.GUI.AccountProfile.RegisterPage
 import com.example.assignme.GUI.AccountProfile.SocialFeedScreen
+import com.example.assignme.GUI.Community.SocialAppUI
 import com.example.assignme.GUI.FirstPage
 import com.example.assignme.GUI.Recipe.CreateRecipe
 import com.example.assignme.GUI.Recipe.RecipeMainPage
@@ -97,6 +98,9 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         composable("add_admin"){
 
             AddAdmin(navController, userViewModel)
+        }
+        composable("chat") {
+            SocialAppUI(navController, userViewModel)
         }
 
         composable("recipe_main_page") { backStackEntry ->
