@@ -50,13 +50,17 @@ import java.util.UUID
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import com.example.assignme.DataClass.CalorieNinjasResponse
 import com.example.assignme.DataClass.RetrofitInstance
 import android.util.Log
+import androidx.compose.foundation.isSystemInDarkTheme
 import com.example.assignme.DataClass.fetchCaloriesForIngredient
+import com.google.firebase.storage.FirebaseStorage
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.ByteArrayOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,17 +69,22 @@ fun CreateRecipe(
     viewModel: RecipeViewModel = viewModel(),
     onBackClick: () -> Unit
 ) {
-    MaterialTheme(colors = darkColors()) {
+    val colors = if (isSystemInDarkTheme()) {
+        darkColors()
+    } else {
+        lightColors()
+    }
+    MaterialTheme(colors = colors) {
 
 
         val context = LocalContext.current
         var hasCameraPermission by remember { mutableStateOf(false) }
         // State variables for the recipe fields
-        var recipeTitle by remember { mutableStateOf("Bento lunch box ideas for work!") }
+        var recipeTitle by remember { mutableStateOf("") }
         var serves by remember { mutableStateOf(1) }
         var cookTime by remember { mutableStateOf(45) }
         var ingredients by remember { mutableStateOf(listOf(Ingredient("", "", null))) }
-        var description by remember { mutableStateOf("A healthy lunch recipe.") }
+        var description by remember { mutableStateOf("") }
         var instructions by remember { mutableStateOf(listOf("")) }  // Step-by-step instructions
         var selectedCategory by remember { mutableStateOf("Lunch") } // Default category
         var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -99,8 +108,18 @@ fun CreateRecipe(
             contract = ActivityResultContracts.TakePicturePreview(),
             onResult = { bitmap ->
                 if (bitmap != null) {
-                    val savedUri = saveImageToInternalStorage(context, bitmap)
-                    imageUri = savedUri
+                    uploadCompressedImage(
+                        context = context,
+                        bitmap = bitmap,
+                        onSuccess = { uri ->
+                            // Successfully uploaded the image and got the download URL
+                            Log.d("FirebaseStorage", "Image uploaded, download URL: $uri")
+                        },
+                        onFailure = { exception ->
+                            // Handle the error
+                            Log.e("FirebaseStorage", "Image upload failed: ${exception.message}")
+                        }
+                    )
                 }
             }
         )
@@ -182,30 +201,30 @@ fun CreateRecipe(
                 OutlinedTextField(
                     value = recipeTitle,
                     onValueChange = { recipeTitle = it },
-                    label = { Text("Recipe Title", color = Color.White) }, // White label text
+                    label = { Text("Recipe Title", color = MaterialTheme.colors.onSurface) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = Color(0xFFE23E3E), // Orange color when focused
-                        textColor = Color.White, // Text color white
-                        cursorColor = Color(0xFFE23E3E), // Orange cursor
-                        focusedLabelColor = Color.White, // White label when focused
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f), // Slightly transparent white when unfocused
-                        placeholderColor = Color.White.copy(alpha = 0.7f) // Placeholder text color
+                        focusedBorderColor = Color(0xFFE23E3E),
+                        textColor = MaterialTheme.colors.onSurface,
+                        cursorColor = Color(0xFFE23E3E),
+                        focusedLabelColor = MaterialTheme.colors.onSurface,
+                        unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
+                        placeholderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
                     )
                 )
 
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description", color = Color.White) }, // White label text
+                    label = { Text("Description", color = MaterialTheme.colors.onSurface) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = Color(0xFFE23E3E), // Orange color when focused
-                        textColor = Color.White, // Text color white
-                        cursorColor = Color(0xFFE23E3E), // Orange cursor
-                        focusedLabelColor = Color.White, // White label when focused
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f), // Slightly transparent white when unfocused
-                        placeholderColor = Color.White.copy(alpha = 0.7f) // Placeholder text color
+                        focusedBorderColor = Color(0xFFE23E3E),
+                        textColor = MaterialTheme.colors.onSurface,
+                        cursorColor = Color(0xFFE23E3E),
+                        focusedLabelColor = MaterialTheme.colors.onSurface,
+                        unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
+                        placeholderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
                     )
                 )
 
@@ -232,7 +251,7 @@ fun CreateRecipe(
                     "Ingredients",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = MaterialTheme.colors.onSurface
+                    color = Color.Gray
                 )
                 ingredients.forEachIndexed { index, ingredient ->
                     val caloriesPerUnit =
@@ -297,24 +316,26 @@ fun CreateRecipe(
                 // Save Button
                 Button(
                     onClick = {
-                        val newRecipe = Recipes(
-                            id = UUID.randomUUID().toString(),
-                            title = recipeTitle,
+                        saveRecipe(
+                            context = context,
+                            viewModel = viewModel,
+                            recipeTitle = recipeTitle,
                             description = description,
                             ingredients = ingredients,
                             cookTime = "$cookTime min",
                             servings = serves,
-                            imageUrl = imageUri?.toString() ?: "",
-                            category = selectedCategory,
+                            selectedCategory = selectedCategory,
                             instructions = instructions,
-                            authorId = "currentUserId" // Replace with actual author ID
-                        )
-
-                        viewModel.addRecipe(newRecipe, onSuccess = {
-                            navController.popBackStack() // Navigate back on success
-                        }, onFailure = {
-                            // Handle failure
-                        })
+                            imageUri = imageUri
+                        ) { success ->
+                            if (success) {
+                                // Navigate back on success
+                                navController.popBackStack()
+                            } else {
+                                // Handle failure
+                                // Show a message or take appropriate action
+                            }
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(backgroundColor = Orange)
@@ -327,6 +348,141 @@ fun CreateRecipe(
         }
     }
 }
+
+fun saveRecipe(
+    context: Context,
+    viewModel: RecipeViewModel,
+    recipeTitle: String,
+    description: String,
+    ingredients: List<Ingredient>,
+    cookTime: String,
+    servings: Int,
+    selectedCategory: String,
+    instructions: List<String>,
+    imageUri: Uri?,
+    onRecipeSaved: (Boolean) -> Unit // Callback to indicate success or failure
+) {
+    // 1. Calculate total calories
+    var totalCalories = 0.0
+    val ingredientList = mutableListOf<Ingredient>()
+
+    ingredients.forEach { ingredient ->
+        fetchCaloriesForIngredient(ingredient.name) { fetchedCalories ->
+            val amountInGrams = ingredient.amount.toDoubleOrNull() ?: 0.0
+            val calculatedCalories = (fetchedCalories / 100) * amountInGrams
+
+            val amountWithUnit = "${ingredient.amount}g"
+
+            ingredientList.add(Ingredient(ingredient.name, amountWithUnit, calculatedCalories))
+            // Accumulate total calories for the recipe
+            totalCalories += calculatedCalories
+
+            // Check if all ingredients are processed
+            if (ingredientList.size == ingredients.size) {
+
+                // Ensure imageUri is not null before proceeding with image upload
+                imageUri?.let { uri ->
+                    // Proceed with image upload after calorie calculation is done
+                    uploadImageToStorage(context, uri, { imageUrl -> // Pass context and imageUri
+                        // After uploading the image, create a new Recipes object and save it
+                        val newRecipe = Recipes(
+                            id = UUID.randomUUID().toString(),
+                            title = recipeTitle,
+                            description = description,
+                            ingredients = ingredientList,
+                            cookTime = cookTime,
+                            servings = servings,
+                            totalCalories = totalCalories.toInt(), // Total calories rounded to int
+                            authorId = "currentUserId", // Replace with actual user ID
+                            imageUrl = imageUrl, // The URL returned from storage upload
+                            category = selectedCategory,
+                            instructions = instructions
+                        )
+
+                        // Call the ViewModel to save the recipe
+                        viewModel.addRecipe(newRecipe, onSuccess = {
+                            onRecipeSaved(true) // Indicate success
+                        }, onFailure = {
+                            onRecipeSaved(false) // Indicate failure
+                        })
+                    }, { exception ->
+                        // Handle failure during image upload
+                        onRecipeSaved(false) // Indicate failure
+                    })
+                } ?: run {
+                    // Handle the case where the imageUri is null (if applicable)
+                    onRecipeSaved(false) // Indicate failure due to missing image
+                }
+            }
+
+        }
+    }
+}
+
+fun compressBitmap(bitmap: Bitmap, quality: Int = 75): ByteArray {
+    val byteArrayOutputStream = ByteArrayOutputStream()
+    // Compress the bitmap to JPEG format with the specified quality (0-100)
+    bitmap.compress(Bitmap.CompressFormat.JPEG, quality, byteArrayOutputStream)
+    return byteArrayOutputStream.toByteArray()
+}
+
+fun uploadImageToStorage(context: Context, imageUri: Uri, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
+    // First, get the bitmap from the imageUri
+    val bitmap = getBitmapFromUri(context, imageUri)
+
+    // Compress the bitmap
+    if (bitmap != null) {
+        val compressedImage = compressBitmap(bitmap)
+
+        // Firebase Storage reference
+        val storageReference = FirebaseStorage.getInstance().reference.child("recipeImg/${UUID.randomUUID()}.jpg")
+
+        // Upload the compressed image as a ByteArray
+        val uploadTask = storageReference.putBytes(compressedImage)
+
+        uploadTask.addOnSuccessListener {
+            // Get the image URL from Firebase
+            storageReference.downloadUrl.addOnSuccessListener { uri ->
+                onSuccess(uri.toString())  // Return the download URL as a String
+            }
+        }.addOnFailureListener { exception ->
+            onFailure(exception)  // Handle failure by passing the exception
+        }
+    } else {
+        // Handle error if bitmap retrieval fails
+        onFailure(Exception("Failed to retrieve Bitmap from Uri"))
+    }
+}
+
+fun getBitmapFromUri(context: Context, uri: Uri): Bitmap? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        BitmapFactory.decodeStream(inputStream)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+fun uploadCompressedImage(context: Context, bitmap: Bitmap, onSuccess: (Uri) -> Unit, onFailure: (Exception) -> Unit) {
+    // Get Firebase Storage reference
+    val storageReference = FirebaseStorage.getInstance().reference.child("recipeImg/${UUID.randomUUID()}.jpg")
+
+    // Compress the bitmap
+    val compressedImage = compressBitmap(bitmap)
+
+    // Upload the compressed image as a ByteArray
+    val uploadTask = storageReference.putBytes(compressedImage)
+
+    uploadTask.addOnSuccessListener {
+        // Retrieve the download URL
+        storageReference.downloadUrl.addOnSuccessListener { uri ->
+            onSuccess(uri)  // Return the download URL
+        }
+    }.addOnFailureListener { exception ->
+        onFailure(Exception("Failed to retrieve Bitmap from Uri")) // Handle any errors
+    }
+}
+
 
 
 @Composable
@@ -346,7 +502,7 @@ fun CategorySelector(
             Text(
                 text = selectedCategory,
                 modifier = Modifier.weight(1f),
-                color = Color.White
+                color = Color.Gray
                  // Set the text color to orange
             )
             Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint=Orange)
