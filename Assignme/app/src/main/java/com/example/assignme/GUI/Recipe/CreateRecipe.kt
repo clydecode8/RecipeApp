@@ -54,8 +54,10 @@ import android.graphics.BitmapFactory
 import com.example.assignme.DataClass.CalorieNinjasResponse
 import com.example.assignme.DataClass.RetrofitInstance
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.example.assignme.DataClass.fetchCaloriesForIngredient
+import com.example.assignme.ViewModel.UserViewModel
 import com.google.firebase.storage.FirebaseStorage
 import retrofit2.Call
 import retrofit2.Callback
@@ -67,7 +69,8 @@ import java.io.ByteArrayOutputStream
 fun CreateRecipe(
     navController: NavController,
     viewModel: RecipeViewModel = viewModel(),
-    onBackClick: () -> Unit
+    userModel: UserViewModel,
+    onBackClick: () -> Unit,
 ) {
     val colors = if (isSystemInDarkTheme()) {
         darkColors()
@@ -108,18 +111,11 @@ fun CreateRecipe(
             contract = ActivityResultContracts.TakePicturePreview(),
             onResult = { bitmap ->
                 if (bitmap != null) {
-                    uploadCompressedImage(
-                        context = context,
-                        bitmap = bitmap,
-                        onSuccess = { uri ->
-                            // Successfully uploaded the image and got the download URL
-                            Log.d("FirebaseStorage", "Image uploaded, download URL: $uri")
-                        },
-                        onFailure = { exception ->
-                            // Handle the error
-                            Log.e("FirebaseStorage", "Image upload failed: ${exception.message}")
-                        }
-                    )
+                    // Save the bitmap to internal storage and update the imageUri
+                    val savedUri = saveImageToInternalStorage(context, bitmap)
+                    imageUri = savedUri // Set the imageUri to the saved image location
+                } else {
+                    Log.e("CameraError", "Failed to capture image")
                 }
             }
         )
@@ -319,6 +315,7 @@ fun CreateRecipe(
                         saveRecipe(
                             context = context,
                             viewModel = viewModel,
+                            recipeViewModel = userModel,
                             recipeTitle = recipeTitle,
                             description = description,
                             ingredients = ingredients,
@@ -352,6 +349,7 @@ fun CreateRecipe(
 fun saveRecipe(
     context: Context,
     viewModel: RecipeViewModel,
+    recipeViewModel: UserViewModel,
     recipeTitle: String,
     description: String,
     ingredients: List<Ingredient>,
@@ -393,7 +391,7 @@ fun saveRecipe(
                             cookTime = cookTime,
                             servings = servings,
                             totalCalories = totalCalories.toInt(), // Total calories rounded to int
-                            authorId = "currentUserId", // Replace with actual user ID
+                            authorId = recipeViewModel.userId.value.toString(), // Replace with actual user ID
                             imageUrl = imageUrl, // The URL returned from storage upload
                             category = selectedCategory,
                             instructions = instructions
@@ -402,15 +400,19 @@ fun saveRecipe(
                         // Call the ViewModel to save the recipe
                         viewModel.addRecipe(newRecipe, onSuccess = {
                             onRecipeSaved(true) // Indicate success
+                            Toast.makeText(context, "Recipe saved successfully!", Toast.LENGTH_SHORT).show()
                         }, onFailure = {
                             onRecipeSaved(false) // Indicate failure
+                            Toast.makeText(context, "Failed to save the recipe", Toast.LENGTH_SHORT).show()
                         })
                     }, { exception ->
                         // Handle failure during image upload
+                        Toast.makeText(context, "Failed to upload image", Toast.LENGTH_SHORT).show()
                         onRecipeSaved(false) // Indicate failure
                     })
                 } ?: run {
                     // Handle the case where the imageUri is null (if applicable)
+                    Toast.makeText(context, "Image not provided", Toast.LENGTH_SHORT).show()
                     onRecipeSaved(false) // Indicate failure due to missing image
                 }
             }

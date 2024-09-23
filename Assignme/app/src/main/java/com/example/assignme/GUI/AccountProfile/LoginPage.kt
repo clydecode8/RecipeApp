@@ -375,12 +375,14 @@ fun handleSignInResult2(result: SignInResult, navController: NavController, user
         Log.d("LoginPage", "Setting user ID: ${userViewModel.userId.value}")
 
         if(userViewModel.userId.value == "JOVQ9eF5fcQ5BkXgcQBa0SBF8Ct1"){
-
-            navController.navigate("admin_page")
+            navController.navigate("admin_page") {
+                popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
+            }
 
         }else{
-
-            navController.navigate("profile_page")
+            navController.navigate("recipe_main_page") {
+                popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
+            }
 
         }
 

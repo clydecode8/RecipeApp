@@ -2,11 +2,14 @@ package com.example.assignme.ViewModel
 
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewModelScope
 import com.example.assignme.DataClass.Recipes
 import com.example.assignme.DataClass.Ingredient
+import com.example.assignme.DataClass.RetrofitInstance
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +31,6 @@ class RecipeViewModel : ViewModel() {
     private val _filteredRecipes = MutableStateFlow<List<Recipes>>(emptyList())
     val filteredRecipes: StateFlow<List<Recipes>> = _filteredRecipes
 
-
     // Fetch recipes from Firestore
     fun fetchRecipes() {
         viewModelScope.launch {
@@ -49,12 +51,30 @@ class RecipeViewModel : ViewModel() {
         }
     }
 
+    fun searchUserRecipes(query: String, userId: String) {
+        firestore.collection("recipes")
+            .whereEqualTo("authorId", userId) // Ensure search is filtered by the userId
+            .get()
+            .addOnSuccessListener { result ->
+                val searchResults = result.map { document ->
+                    document.toObject(Recipes::class.java).copy(id = document.id)
+                }.filter { recipe ->
+                    recipe.title.contains(query, ignoreCase = true)
+                }
+                _filteredRecipes.value = searchResults // Update the filtered list with search results
+            }
+            .addOnFailureListener { exception ->
+                println("Error searching user recipes: ${exception.message}")
+            }
+    }
 
     // Fetch categories from Firestore
     fun fetchCategories() {
         viewModelScope.launch {
             try {
-                val snapshot = firestore.collection("recipes").get().await()
+                val authorId = "LivBmlpHsfetYgJ99iCGHEUvb8V2"
+
+                val snapshot = firestore.collection("recipes").whereEqualTo("authorId", authorId)  .get().await()
                 val categoriesSet = mutableSetOf<String>()
                 snapshot.documents.forEach { document ->
                     val category = document.getString("category")
@@ -103,6 +123,22 @@ class RecipeViewModel : ViewModel() {
 
     fun getRecipeById(recipeId: String): Recipes? {
         return _recipes.value.find { it.id == recipeId }
+    }
+
+    fun loadUserRecipes(userId: String) {
+        firestore.collection("recipes")
+            .whereEqualTo("authorId", userId) // Filter by authorId
+            .get()
+            .addOnSuccessListener { result ->
+                val userRecipes = result.map { document ->
+                    document.toObject(Recipes::class.java).copy(id = document.id)
+                }
+                _filteredRecipes.value = userRecipes // Update the list of recipes for the user
+            }
+            .addOnFailureListener { exception ->
+                // Handle failure case
+                println("Error fetching user recipes: ${exception.message}")
+            }
     }
 
     fun uploadImageToFirebase(imageUri: Uri, onSuccess: (String) -> Unit) {

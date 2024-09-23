@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,15 +25,18 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
 import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.AndroidBar.AppTopBar
 import com.example.assignme.DataClass.Recipes
 import com.example.assignme.R
 import com.example.assignme.ViewModel.RecipeViewModel
+import com.example.assignme.ViewModel.UserProfile
+import com.example.assignme.ViewModel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecipeMainPage(navController: NavController, viewModel: RecipeViewModel = viewModel()) {
+fun RecipeMainPage(navController: NavController, viewModel: RecipeViewModel = viewModel(), userModel: UserViewModel) {
     val recipes by viewModel.filteredRecipes.collectAsState()
     val categories by viewModel.categories.collectAsState()
     var selectedCategory by remember { mutableStateOf("") }
@@ -55,7 +59,7 @@ fun RecipeMainPage(navController: NavController, viewModel: RecipeViewModel = vi
             contentPadding = PaddingValues(16.dp)
         ) {
             item {
-                Header()
+                Header(navController, userModel)
             }
 
             item {
@@ -118,7 +122,8 @@ fun RecipeMainPage(navController: NavController, viewModel: RecipeViewModel = vi
 
 
 @Composable
-fun Header() {
+fun Header(navController: NavController, userModel: UserViewModel) {
+    val userProfile by userModel.userProfile.observeAsState(UserProfile())
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -130,11 +135,15 @@ fun Header() {
             fontWeight = FontWeight.Bold
         )
         Image(
-            painter = painterResource(id = R.drawable.profile),
+            painter = rememberImagePainter(userProfile.profilePictureUrl),
             contentDescription = "Profile Picture",
             modifier = Modifier
                 .size(48.dp)
-                .clip(CircleShape),
+                .clip(CircleShape)
+                .clickable {
+                    // Navigate to "My Recipe" page
+                    navController.navigate("my_recipe_page")
+        },
             contentScale = ContentScale.Crop
         )
     }
@@ -177,7 +186,10 @@ fun SearchBar2(
 
 @Composable
 fun TrendingSection(recipes: List<Recipes>, navController: NavController) {
-    val shuffledRecipes = remember { recipes.shuffled() }  // Shuffle recipes for randomness
+    val authorId = "LivBmlpHsfetYgJ99iCGHEUvb8V2"
+    val authorRecipes = remember { recipes.filter { it.authorId == authorId } }
+
+    val shuffledRecipes = remember { authorRecipes.shuffled() }  // Shuffle recipes for randomness
 
     Column(
         modifier = Modifier.padding(vertical = 16.dp)
@@ -229,6 +241,7 @@ fun PopularCategorySection(
     selectedCategory: String,
     onCategorySelected: (String) -> Unit
 ) {
+
     Column {
         Text(
             text = "Popular category",

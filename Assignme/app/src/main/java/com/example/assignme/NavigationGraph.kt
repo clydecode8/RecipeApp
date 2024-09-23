@@ -28,6 +28,7 @@ import com.example.assignme.GUI.AccountProfile.SocialFeedScreen
 import com.example.assignme.GUI.Community.SocialAppUI
 import com.example.assignme.GUI.FirstPage
 import com.example.assignme.GUI.Recipe.CreateRecipe
+import com.example.assignme.GUI.Recipe.MyRecipe
 import com.example.assignme.GUI.Recipe.RecipeMainPage
 import com.example.assignme.GUI.Recipe.RecipeScreen
 import com.example.assignme.GUI.Recipe.RecipeUploadPage
@@ -106,7 +107,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         composable("recipe_main_page") { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("recipe_main_page") }
             val viewModel: RecipeViewModel = viewModel(parentEntry)
-            RecipeMainPage(navController = navController, viewModel = viewModel)
+            RecipeMainPage(navController = navController, viewModel = viewModel, userViewModel,)
         }
 
         composable("recipe_upload_page") { backStackEntry ->
@@ -147,11 +148,16 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             CreateRecipe(
                 navController = navController,
                 viewModel = viewModel,
+                userViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }
 
-
+        composable("my_recipe_page") { backStackEntry ->
+            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("recipe_main_page") }
+            val viewModel: RecipeViewModel = viewModel(parentEntry)
+            MyRecipe(navController = navController, viewModel = viewModel, userViewModel,)
+        }
 
 
     }
