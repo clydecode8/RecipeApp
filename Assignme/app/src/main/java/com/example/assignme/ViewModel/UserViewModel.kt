@@ -1,14 +1,17 @@
 package com.example.assignme.ViewModel
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 
 
 class UserViewModel : ViewModel(), UserProfileProvider {
@@ -141,10 +144,34 @@ class UserViewModel : ViewModel(), UserProfileProvider {
     }
 
 
-    fun addPost(content: String, imagePath: String?) {
-        val db = FirebaseFirestore.getInstance()
-        val post = Post(userId = _userId.value ?: "", content = content, imagePath = imagePath)
+    fun addPost(content: String, imageUri: Uri?) {
+        if (imageUri != null) {
+            val storageRef = FirebaseStorage.getInstance().reference.child("images/${UUID.randomUUID()}")
+            storageRef.putFile(imageUri)
+                .addOnSuccessListener {
+                    storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                        val post = Post(
+                            userId = _userId.value ?: "",
+                            content = content,
+                            imagePath = downloadUrl.toString()
+                        )
+                        savePostToFirestore(post)
+                    }
+                        .addOnFailureListener { e ->
+                            Log.w("UserViewModel", "Error uploading image", e)
+                        }
+                }
+                .addOnFailureListener { e ->
+                    Log.w("UserViewModel", "Error uploading image", e)
+                }
+        } else {
+            val post = Post(userId = _userId.value ?: "", content = content, imagePath = null)
+            savePostToFirestore(post)
+        }
+    }
 
+    private fun savePostToFirestore(post: Post) {
+        val db = FirebaseFirestore.getInstance()
         db.collection("posts")
             .add(post)
             .addOnSuccessListener {
@@ -156,7 +183,7 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             }
     }
 
-    fun fetchUsers() {
+    private fun fetchUsers() {
         val db = FirebaseFirestore.getInstance()
         db.collection("users")
             .get()
@@ -169,7 +196,7 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             }
     }
 
-    fun fetchPosts() {
+    private fun fetchPosts() {
         val currentUserId = _userId.value
         if (currentUserId.isNullOrEmpty()) {
             Log.w("UserViewModel", "User ID is null or empty, skipping post fetch.")
@@ -225,7 +252,6 @@ class UserViewModel : ViewModel(), UserProfileProvider {
 
         return commentsLiveData
     }
-
 
 }
 

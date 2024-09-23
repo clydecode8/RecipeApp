@@ -13,7 +13,6 @@ import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,8 +54,6 @@ fun SocialAppUI(navController: NavController, userViewModel: UserViewModel) {
 fun PostComposer(userViewModel: UserViewModel) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var postText by remember { mutableStateOf("") }
-
-    // 从用户视图模型获取用户头像 URL
     val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
     val profilePictureUrl = userProfile.profilePictureUrl
 
@@ -76,9 +73,8 @@ fun PostComposer(userViewModel: UserViewModel) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 使用用户的头像或默认头像
             Image(
-                painter = rememberImagePainter(profilePictureUrl ?: R.drawable.profile), // 替换为默认头像
+                painter = rememberImagePainter(profilePictureUrl ?: R.drawable.profile),
                 contentDescription = "Profile picture",
                 modifier = Modifier
                     .size(40.dp)
@@ -98,12 +94,11 @@ fun PostComposer(userViewModel: UserViewModel) {
                 Icon(
                     painter = painterResource(id = R.drawable.addimage),
                     contentDescription = "Add image",
-                    modifier = Modifier.size(30.dp) // Set the size of the icon here
+                    modifier = Modifier.size(30.dp)
                 )
             }
         }
 
-        // Show selected image
         if (selectedImageUri != null) {
             Image(
                 painter = rememberImagePainter(selectedImageUri),
@@ -117,12 +112,16 @@ fun PostComposer(userViewModel: UserViewModel) {
             )
         }
 
-        // Post button
         Button(
             onClick = {
-                userViewModel.addPost(postText, selectedImageUri.toString()) // Convert URI to string
-                postText = ""  // Clear text after posting
-                selectedImageUri = null  // Clear image after posting
+                selectedImageUri?.let { uri ->
+                    userViewModel.addPost(postText, uri) // 上传图片
+                    postText = ""  // 清空文本框
+                    selectedImageUri = null  // 清空选择的图片
+                } ?: run {
+                    userViewModel.addPost(postText, null) // 没有选择图片
+                    postText = ""  // 清空文本框
+                }
             },
             enabled = postText.isNotEmpty(),
             modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
