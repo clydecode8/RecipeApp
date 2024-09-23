@@ -253,6 +253,35 @@ class UserViewModel : ViewModel(), UserProfileProvider {
         return commentsLiveData
     }
 
+    //Par of My posts
+    // 删除帖子
+    fun deletePost(postId: String) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("posts").document(postId)
+            .delete()
+            .addOnSuccessListener {
+                Log.d("UserViewModel", "Post deleted successfully")
+                fetchPosts() // 重新获取帖子列表
+            }
+            .addOnFailureListener { e ->
+                Log.w("UserViewModel", "Error deleting post", e)
+            }
+    }
+
+    // 更新帖子的内容
+    fun updatePost(postId: String, newContent: String) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("posts").document(postId)
+            .update("content", newContent)
+            .addOnSuccessListener {
+                Log.d("UserViewModel", "Post updated successfully")
+                fetchPosts() // 重新获取帖子列表
+            }
+            .addOnFailureListener { e ->
+                Log.w("UserViewModel", "Error updating post", e)
+            }
+    }
+
 }
 
 data class UserProfile(
