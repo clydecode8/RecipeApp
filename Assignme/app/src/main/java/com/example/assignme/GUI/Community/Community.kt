@@ -356,54 +356,6 @@ fun PostItem(
 }
 
 @Composable
-fun ShowEditDialog(
-    currentContent: String,
-    onDismiss: () -> Unit,
-    onUpdate: (String) -> Unit
-) {
-    var newContent by remember { mutableStateOf(currentContent) }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Edit Post", style = MaterialTheme.typography.h6)
-
-                TextField(
-                    value = newContent,
-                    onValueChange = { newContent = it },
-                    label = { Text("Content") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Button(onClick = { onDismiss() }) {
-                        Text("Cancel")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        onUpdate(newContent)
-                        onDismiss()
-                    }) {
-                        Text("Update")
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
 fun ImageDialog(imageUrl: String, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         val imagePainter = rememberImagePainter(data = imageUrl)
