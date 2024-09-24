@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -72,15 +73,19 @@ class UserViewModel : ViewModel(), UserProfileProvider {
                             // 如果用户还没有点赞，则进行点赞
                             db.collection("posts").document(postId)
                                 .update(
-                                    "likes", FieldValue.increment(1),
-                                    "likedUsers", FieldValue.arrayUnion(currentUserId) // 添加用户到 likedUsers 列表
+                                    "likes",
+                                    FieldValue.increment(1),
+                                    "likedUsers",
+                                    FieldValue.arrayUnion(currentUserId) // 添加用户到 likedUsers 列表
                                 )
                         } else if (!liked && isAlreadyLiked) {
                             // 如果用户已经点赞，则取消点赞
                             db.collection("posts").document(postId)
                                 .update(
-                                    "likes", FieldValue.increment(-1),
-                                    "likedUsers", FieldValue.arrayRemove(currentUserId) // 从 likedUsers 列表中移除用户
+                                    "likes",
+                                    FieldValue.increment(-1),
+                                    "likedUsers",
+                                    FieldValue.arrayRemove(currentUserId) // 从 likedUsers 列表中移除用户
                                 )
                         } else {
                             // Else case for completeness (no action needed)
@@ -146,7 +151,8 @@ class UserViewModel : ViewModel(), UserProfileProvider {
 
     fun addPost(content: String, imageUri: Uri?) {
         if (imageUri != null) {
-            val storageRef = FirebaseStorage.getInstance().reference.child("images/${UUID.randomUUID()}")
+            val storageRef =
+                FirebaseStorage.getInstance().reference.child("images/${UUID.randomUUID()}")
             storageRef.putFile(imageUri)
                 .addOnSuccessListener {
                     storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
@@ -226,6 +232,7 @@ class UserViewModel : ViewModel(), UserProfileProvider {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         return dateFormat.format(Date(timestamp))
     }
+
     fun getCommentsForPost(postId: String): LiveData<List<Comment>> {
         val db = FirebaseFirestore.getInstance()
         val commentsLiveData = MutableLiveData<List<Comment>>()
@@ -235,7 +242,8 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     Log.w("UserViewModel", "Listen failed.", e)
-                    commentsLiveData.value = emptyList() // Handle failure by returning an empty list
+                    commentsLiveData.value =
+                        emptyList() // Handle failure by returning an empty list
                     return@addSnapshotListener
                 }
 
@@ -246,7 +254,8 @@ class UserViewModel : ViewModel(), UserProfileProvider {
                     commentsLiveData.value = comments
                 } else {
                     Log.d("UserViewModel", "No comments found")
-                    commentsLiveData.value = emptyList() // Return empty list if no comments are found
+                    commentsLiveData.value =
+                        emptyList() // Return empty list if no comments are found
                 }
             }
 
@@ -282,9 +291,80 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             }
     }
 
+    private fun saveTrackerDataToFirestore(userId: String, data: Map<String, Any?>) {
+        val db = FirebaseFirestore.getInstance()
+        // Save tracker data in the "tracker" collection
+        db.collection("tracker").document(userId)
+            .set(data, SetOptions.merge()) // Use merge to avoid overwriting other fields
+            .addOnSuccessListener {
+                Log.d("UserViewModel", "Tracker data saved successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.w("UserViewModel", "Error saving tracker data", e)
+            }
+    }
+
+    // Function to save user data
+    fun saveUserData(
+        weight: String,
+        height: String,
+        imageUri: Uri?,
+        userId: String,
+        onComplete: (Boolean) -> Unit
+    ) {
+        val userData = mapOf(
+            "weight" to weight,
+            "height" to height,
+            "bodyImageUrl" to imageUri?.toString() // Convert Uri to string
+        )
+
+        // Save user data to Firestore under the user's document
+        val db = FirebaseFirestore.getInstance()
+        db.collection("tracker").document(userId)
+            .set(userData, SetOptions.merge()) // Merge with existing data if any
+            .addOnSuccessListener {
+                Log.d("UserViewModel", "User data saved successfully")
+                saveTrackerDataToFirestore(userId, userData) // Save tracker data
+                onComplete(true) // Notify success
+            }
+            .addOnFailureListener { e ->
+                Log.w("UserViewModel", "Error saving user data", e)
+                onComplete(false) // Notify failure
+            }
+    }
+
+    fun fetchTrackerData(userId: String, onResult: (TrackerData?) -> Unit) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("tracker").document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    val weight = document.getString("weight")
+                    val height = document.getString("height")
+                    val bodyImageUrl = document.getString("bodyImageUrl")
+
+                    // Create TrackerData object
+                    val trackerData = TrackerData(
+                        weight = weight ?: "",
+                        height = height ?: "",
+                        bodyImageUri = bodyImageUrl?.let { Uri.parse(it) }
+                    )
+
+                    onResult(trackerData) // Return the tracker data
+                } else {
+                    onResult(null) // No document found
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.w("UserViewModel", "Error fetching tracker data", e)
+                onResult(null) // Return null on failure
+            }
+    }
+
 }
 
-data class UserProfile(
+
+    data class UserProfile(
     val name: String? = null,
     val email: String? = null,
     val phoneNumber: String? = null,
@@ -311,4 +391,11 @@ data class Comment(
     val timestamp: Long = 0L,
     val userProfileImage: String = ""
 )
+
+data class TrackerData(
+    val weight: String = 0f.toString(), // Default to 0f for float type
+    val height: String = 0f.toString(), // Default to 0f for float type
+    val bodyImageUri: Uri? = null,
+)
+
 

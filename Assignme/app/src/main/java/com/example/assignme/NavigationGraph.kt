@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -14,7 +12,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.assignme.DataClass.Recipes
 import com.example.assignme.GUI.AccountProfile.AddAdmin
 import com.example.assignme.GUI.AccountProfile.AdminDashboard
 import com.example.assignme.GUI.AccountProfile.AppFirstPage
@@ -26,6 +23,8 @@ import com.example.assignme.GUI.AccountProfile.RecipeApproveScreen
 import com.example.assignme.GUI.AccountProfile.RegisterPage
 import com.example.assignme.GUI.AccountProfile.SocialFeedScreen
 import com.example.assignme.GUI.Community.SocialAppUI
+import com.example.assignme.GUI.DailyTracker.SetUpInfo
+import com.example.assignme.GUI.DailyTracker.TrackerPage
 import com.example.assignme.GUI.FirstPage
 import com.example.assignme.GUI.Recipe.CreateRecipe
 import com.example.assignme.GUI.Recipe.MyRecipe
@@ -159,7 +158,12 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             MyRecipe(navController = navController, viewModel = viewModel, userViewModel,)
         }
 
-
+        composable("setup_info_page") {
+            SetUpInfo(navController, userViewModel)
+        }
+        composable("tracker_page") {
+            TrackerPage(navController, userViewModel)
+        }
     }
 
 }

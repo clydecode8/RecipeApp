@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.firebase.storage)
     implementation(libs.androidx.room.common)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.firebase.database.ktx)
     //implementation(libs.androidx.ui.desktop)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
