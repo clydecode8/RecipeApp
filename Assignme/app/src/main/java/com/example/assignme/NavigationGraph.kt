@@ -1,6 +1,8 @@
 package com.example.assignme
 
 import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,11 +34,13 @@ import com.example.assignme.GUI.Recipe.MyRecipe
 import com.example.assignme.GUI.Recipe.RecipeMainPage
 import com.example.assignme.GUI.Recipe.RecipeScreen
 import com.example.assignme.GUI.Recipe.RecipeUploadPage
+import com.example.assignme.GUI.Recipe.SchedulePage
 import com.example.assignme.GUI.Recipe.SearchResultsPage
 import com.example.assignme.ViewModel.RecipeViewModel
 import com.example.assignme.ViewModel.UserViewModel
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnrememberedGetBackStackEntry")
 @Composable
 fun NavigationGraph(navController: NavHostController = rememberNavController(), userViewModel: UserViewModel){
@@ -136,7 +140,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             // Log whether the recipe was found
             if (recipe != null) {
                 println("Recipe found: ${recipe.title}")
-                RecipeScreen(recipe = recipe, viewModel = viewModel, onBackClick = { navController.popBackStack() })
+                RecipeScreen(recipe = recipe, userViewModel, viewModel = viewModel, onBackClick = { navController.popBackStack() })
             } else {
                 println("Recipe not found for id: $recipeId")
                 Text("Recipe not found", modifier = Modifier.padding(16.dp))
@@ -157,6 +161,12 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("recipe_main_page") }
             val viewModel: RecipeViewModel = viewModel(parentEntry)
             MyRecipe(navController = navController, viewModel = viewModel, userViewModel,)
+        }
+
+        composable("schedule_page") { backStackEntry ->
+            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("recipe_main_page") }
+            val viewModel: RecipeViewModel = viewModel(parentEntry)
+            SchedulePage(navController = navController, viewModel = viewModel, userViewModel,  onBackClick = { navController.popBackStack() })
         }
 
 
