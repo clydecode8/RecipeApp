@@ -32,9 +32,9 @@ fun AppBottomNavigation(navController: NavController) {
 
     val items = listOf(
         BottomNavItem("Home", R.drawable.ic_home, "recipe_main_page"),
-        BottomNavItem("Health", R.drawable.ic_health, "tracker_page"), //tracker_page setup_info_page
+        BottomNavItem("Calendar", R.drawable.ic_calendar, "schedule_page"),
         BottomNavItem("Add", R.drawable.ic_add, "create_recipe", showBadge = true), // Set showBadge to true
-        BottomNavItem("Calendar", R.drawable.ic_calendar, "calendar"),
+        BottomNavItem("Health", R.drawable.ic_health, "health"),
         BottomNavItem("Chat", R.drawable.ic_chat, "chat")
     )
 
