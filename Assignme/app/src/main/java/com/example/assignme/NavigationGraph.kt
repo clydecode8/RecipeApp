@@ -26,6 +26,8 @@ import com.example.assignme.GUI.AccountProfile.RecipeApproveScreen
 import com.example.assignme.GUI.AccountProfile.RegisterPage
 import com.example.assignme.GUI.AccountProfile.SocialFeedScreen
 import com.example.assignme.GUI.Community.SocialAppUI
+import com.example.assignme.GUI.DailyTracker.SetUpInfo
+import com.example.assignme.GUI.DailyTracker.TrackerPage
 import com.example.assignme.GUI.FirstPage
 import com.example.assignme.GUI.Recipe.CreateRecipe
 import com.example.assignme.GUI.Recipe.MyRecipe
@@ -136,7 +138,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             // Log whether the recipe was found
             if (recipe != null) {
                 println("Recipe found: ${recipe.title}")
-                RecipeScreen(recipe = recipe, viewModel = viewModel, onBackClick = { navController.popBackStack() })
+               // RecipeScreen(recipe = recipe, viewModel = viewModel, onBackClick = { navController.popBackStack() })
             } else {
                 println("Recipe not found for id: $recipeId")
                 Text("Recipe not found", modifier = Modifier.padding(16.dp))
@@ -159,7 +161,12 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             MyRecipe(navController = navController, viewModel = viewModel, userViewModel,)
         }
 
-
+        composable("setup_info_page") {
+            SetUpInfo(navController, userViewModel)
+        }
+        composable("tracker_page") {
+            TrackerPage(navController, userViewModel)
+        }
     }
 
 }
