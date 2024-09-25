@@ -1,40 +1,85 @@
 package com.example.assignme.GUI.DailyTracker
 
+import android.os.Build
+import android.util.Log
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.AndroidBar.AppTopBar
+import com.example.assignme.ViewModel.TrackerViewModel
 import com.example.assignme.ViewModel.UserViewModel
-import com.google.firebase.database.FirebaseDatabase
+import java.time.LocalDate
+import androidx.compose.ui.platform.LocalContext
 
-import androidx.compose.runtime.livedata.observeAsState
-
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrackerPage(navController: NavController, userViewModel: UserViewModel) {
-    // Observe userId as state
+fun TrackerPage(
+    navController: NavController,
+    userViewModel: UserViewModel,
+    trackerViewModel: TrackerViewModel
+) {
+    // Observe userId and current water intake as state
     val userId by userViewModel.userId.observeAsState()
+    val currentWaterIntake by trackerViewModel.currentWaterIntake.observeAsState(0)
 
-    // Check user data if userId is available
+    // Fetch user data based on the userId
     LaunchedEffect(userId) {
+        Log.d("TrackerPage", "Fetching tracker data for userId: $userId")
         userId?.let { id ->
             userViewModel.fetchTrackerData(id) { trackerData ->
-                // Navigate to SetUpInfo if any of the fields are blank or null
                 if (trackerData == null || trackerData.weight.isBlank() || trackerData.height.isBlank() || trackerData.bodyImageUri == null) {
+                    Log.w("TrackerPage", "User data incomplete, navigating to setup_info_page")
                     navController.navigate("setup_info_page")
+                } else {
+                    Log.d("TrackerPage", "Tracker data fetched successfully: $trackerData")
                 }
             }
+        }
+    }
+
+    // State variables to handle live updates
+    var weight by remember { mutableStateOf("0") }
+    var calories by remember { mutableStateOf(0) }
+
+    // State variables for success messages
+    var weightUpdateMessage by remember { mutableStateOf("") }
+    var calorieAddMessage by remember { mutableStateOf("") }
+    var waterIntakeMessage by remember { mutableStateOf("") }
+
+    // Get the LocalContext
+    val context = LocalContext.current
+
+    // Toast message effects
+    LaunchedEffect(weightUpdateMessage) {
+        if (weightUpdateMessage.isNotEmpty()) {
+            Toast.makeText(context, weightUpdateMessage, Toast.LENGTH_SHORT).show()
+            weightUpdateMessage = "" // Reset the message
+        }
+    }
+
+    LaunchedEffect(calorieAddMessage) {
+        if (calorieAddMessage.isNotEmpty()) {
+            Toast.makeText(context, calorieAddMessage, Toast.LENGTH_SHORT).show()
+            calorieAddMessage = "" // Reset the message
+        }
+    }
+
+    LaunchedEffect(waterIntakeMessage) {
+        if (waterIntakeMessage.isNotEmpty()) {
+            Toast.makeText(context, waterIntakeMessage, Toast.LENGTH_SHORT).show()
+            waterIntakeMessage = "" // Reset the message
         }
     }
 
@@ -50,14 +95,55 @@ fun TrackerPage(navController: NavController, userViewModel: UserViewModel) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            WeightSection(navController)
-            WaterIntakeSection()
-            CaloriesSection()
+            WeightSection(
+                weight = weight,
+                onWeightChange = { weight = it },
+                onUpdateClick = {
+                    if (weight.isNotEmpty()) {
+                        val currentDate = LocalDate.now()
+                        Log.d("TrackerPage", "Updating weight to $weight for date $currentDate")
+                        trackerViewModel.updateWeight(currentDate, weight.toFloat())
+                        weightUpdateMessage = "Successfully updated weight to $weight kg."
+                    } else {
+                        Log.w("TrackerPage", "Weight input is empty, cannot update.")
+                    }
+                }
+            )
 
+            WaterIntakeSection(
+                currentWaterIntake = currentWaterIntake,
+                onAddWaterClick = {
+                    val currentDate = LocalDate.now()
+                    Log.d("TrackerPage", "Adding water intake for date $currentDate")
+                    trackerViewModel.addWaterIntake(currentDate)
+                    waterIntakeMessage = "Water intake updated."
+                }
+            )
+
+            CaloriesSection(
+                calories = calories,
+                onCaloriesChange = { calories = it.toIntOrNull() ?: 0 },
+                onAddClick = {
+                    if (calories > 0) {
+                        val currentDate = LocalDate.now()
+                        Log.d("TrackerPage", "Adding $calories calories for date $currentDate")
+                        trackerViewModel.addCalories(currentDate, calories.toFloat())
+                        calorieAddMessage = "Successfully added $calories kcal."
+                    } else {
+                        Log.w("TrackerPage", "Calories input is invalid (<= 0), cannot add.")
+                    }
+                }
+            )
+
+            // Daily Analysis Button
             Button(
-                onClick = { navController.navigate("daily_analysis") },
-                modifier = Modifier.fillMaxWidth()
-                    .padding(top = 5.dp) // Optional additional padding
+                onClick = {
+                    Log.d("TrackerPage", "Navigating to Daily Analysis")
+                    navController.navigate("daily_analysis")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
             ) {
                 Text("Daily Analysis")
             }
@@ -65,36 +151,36 @@ fun TrackerPage(navController: NavController, userViewModel: UserViewModel) {
     }
 }
 
-
 @Composable
-fun WeightSection(navController: NavController) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+fun WeightSection(
+    weight: String,
+    onWeightChange: (String) -> Unit,
+    onUpdateClick: () -> Unit // Change this to a regular function type
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Weight", fontWeight = FontWeight.Bold)
-            }
-            Text("0 kg", fontSize = 36.sp, fontWeight = FontWeight.Bold)
-            Text("kg", color = Color.Gray)
+            Text("Weight", fontWeight = MaterialTheme.typography.titleLarge.fontWeight)
+            Text(weight, style = MaterialTheme.typography.displayLarge)
+            Text("kg", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
 
+            // Text input for weight
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = weight,
+                    onValueChange = onWeightChange,
                     label = { Text("Today's weight") },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    onClick = onUpdateClick, // This will now accept the correct type
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Update")
                 }
@@ -104,19 +190,19 @@ fun WeightSection(navController: NavController) {
 }
 
 @Composable
-fun WaterIntakeSection() {
-    Card(modifier = Modifier.fillMaxWidth()) {
+fun WaterIntakeSection(
+    currentWaterIntake: Int,
+    onAddWaterClick: () -> Unit // Keep this as a normal function
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Water Intake", fontWeight = FontWeight.Bold)
-            }
-            Text("0 ml water (0 Glass)")
+            Text("Water Intake", fontWeight = MaterialTheme.typography.titleLarge.fontWeight)
+            Text("${currentWaterIntake * 100}ml water (${currentWaterIntake} Glass)")
+
             Button(
-                onClick = {},
+                onClick = onAddWaterClick, // Use the normal function here
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Add water")
@@ -126,34 +212,35 @@ fun WaterIntakeSection() {
 }
 
 @Composable
-fun CaloriesSection() {
-    Card(modifier = Modifier.fillMaxWidth()) {
+fun CaloriesSection(
+    calories: Int,
+    onCaloriesChange: (String) -> Unit,
+    onAddClick: () -> Unit // Keep this as a normal function
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Calories", fontWeight = FontWeight.Bold)
-            }
-            Text("0 kcal", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text("Calories", fontWeight = MaterialTheme.typography.titleLarge.fontWeight)
+            Text("$calories", style = MaterialTheme.typography.displaySmall)
             Text("kcal")
 
+            // Text input for calories
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = calories.toString(),
+                    onValueChange = onCaloriesChange,
                     label = { Text("Today's calories") },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+                    onClick = onAddClick, // Use the normal function here
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Add")
                 }
