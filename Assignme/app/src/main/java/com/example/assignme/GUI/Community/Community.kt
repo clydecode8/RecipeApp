@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,6 +34,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import com.example.assignme.AndroidBar.AppBottomNavigation
+import com.example.assignme.AndroidBar.AppTopBar
+import com.example.assignme.DataClass.WindowInfo
+import com.example.assignme.DataClass.rememberWidowInfo
 import com.example.assignme.R
 import com.example.assignme.ViewModel.Comment
 import com.example.assignme.ViewModel.UserProfile
@@ -41,57 +45,125 @@ import com.example.assignme.ViewModel.UserViewModel
 
 @Composable
 fun SocialAppUI(navController: NavController, userViewModel: UserViewModel) {
-    val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
-    val userName = userProfile.name ?: "User"
+    val windowInfo = rememberWidowInfo()
+    val colors = if (isSystemInDarkTheme()) {
+        darkColors()
+    } else {
+        lightColors()
+    }
+    MaterialTheme(colors = colors) {
+        val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
+        val userName = userProfile.name ?: "User"
+        var selectedTab by remember { mutableStateOf(0) }
 
-    // 选择的标签状态
-    var selectedTab by remember { mutableStateOf(0) }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Welcome $userName,",
-                        modifier = Modifier.padding(top = 16.dp),
-                        color = Color.White
-                    )
-                },
-                backgroundColor = Color.Black,
-                contentColor = Color.White,
-                modifier = Modifier.height(80.dp)
-            )
-        },
-        bottomBar = { AppBottomNavigation(navController) }
-    ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            // TabRow
-            TabRow(
-                selectedTabIndex = selectedTab,
-                backgroundColor = Color.Black,
-                contentColor = Color.White,
-                modifier = Modifier.height(50.dp)
-                ) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = { Text("Community") },
-
+        Scaffold(
+            topBar = { AppTopBar(title = "Welcome $userName,", navController = navController) },
+            bottomBar = { AppBottomNavigation(navController) }
+        ) { innerPadding ->
+            when (windowInfo.screenWidthInfo) {
+                is WindowInfo.WindowType.Compact -> CompactLayout(
+                    innerPadding = innerPadding,
+                    selectedTab = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    userViewModel = userViewModel
                 )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = { Text("My Posts") }
+                is WindowInfo.WindowType.Medium -> MediumLayout(
+                    innerPadding = innerPadding,
+                    selectedTab = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    userViewModel = userViewModel
+                )
+                is WindowInfo.WindowType.Expanded -> ExpandedLayout(
+                    innerPadding = innerPadding,
+                    selectedTab = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    userViewModel = userViewModel
                 )
             }
+        }
+    }
+}
 
-            PostComposer(userViewModel)
+@Composable
+fun TabRowContent(selectedTab: Int, onTabSelected: (Int) -> Unit) {
+    TabRow(
+        selectedTabIndex = selectedTab,
+        backgroundColor = Color.DarkGray,
+        contentColor = Color.White,
+        modifier = Modifier.height(50.dp)
+    ) {
+        Tab(
+            selected = selectedTab == 0,
+            onClick = { onTabSelected(0) },
+            text = { Text("Community") }
+        )
+        Tab(
+            selected = selectedTab == 1,
+            onClick = { onTabSelected(1) },
+            text = { Text("My Posts") }
+        )
+    }
+}
 
-            // 根据选择的标签显示不同的内容
-            if (selectedTab == 0) {
-                PostList(userViewModel) // 显示所有帖子
-            } else {
-                MyPostList(userViewModel) // 显示用户的帖子
+@Composable
+fun CompactLayout(
+    innerPadding: PaddingValues,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    userViewModel: UserViewModel
+) {
+    Column(modifier = Modifier.padding(innerPadding)) {
+        TabRowContent(selectedTab, onTabSelected)
+        PostComposer(userViewModel)
+        if (selectedTab == 0) {
+            PostList(userViewModel)
+        } else {
+            MyPostList(userViewModel)
+        }
+    }
+}
+
+@Composable
+fun MediumLayout(
+    innerPadding: PaddingValues,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    userViewModel: UserViewModel
+) {
+    Column(modifier = Modifier.padding(innerPadding)) {
+        TabRowContent(selectedTab, onTabSelected)
+        Row {
+            Column(modifier = Modifier.weight(1f)) {
+                PostComposer(userViewModel)
+                if (selectedTab == 0) {
+                    PostList(userViewModel)
+                } else {
+                    MyPostList(userViewModel)
+                }
+            }
+            Column(modifier = Modifier.width(200.dp)) {
+                // Additional content or controls can be added here
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpandedLayout(
+    innerPadding: PaddingValues,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    userViewModel: UserViewModel
+) {
+    Column(modifier = Modifier.padding(innerPadding)) {
+        TabRowContent(selectedTab, onTabSelected)
+        Row {
+            Column(modifier = Modifier.weight(1f)) {
+                PostComposer(userViewModel)
+                PostList(userViewModel)
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                MyPostList(userViewModel)
             }
         }
     }
