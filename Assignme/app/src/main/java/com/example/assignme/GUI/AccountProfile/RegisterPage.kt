@@ -392,7 +392,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                             message = dialogMessage,
                             onDismiss = {
                                 showSuccessDialog = false
-                                //navController.navigate("login_page")
+                                navController.navigate("login_page")
                             }
                         )
                     }
@@ -639,7 +639,8 @@ fun submitRegistration(
                     "phoneNumber" to phoneNumber,
                     "profilePictureUrl" to profilePictureUrl, // This will be null if not provided
                     "gender" to gender,
-                    "country" to country
+                    "country" to country,
+                    "authmethod" to "firebase"
                 )
 
                 db.collection("users").document(userId)

@@ -57,6 +57,7 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
+import kotlin.math.sign
 
 
 @Composable
@@ -80,7 +81,8 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
         )
     }
 
-    fun handleSignInResult(signInResult: SignInResult, navController: NavController) {
+    //Google sign in
+    fun handleSignInResult(signInResult: SignInResult, navController: NavController, userViewModel: UserProfileProvider) {
         Log.d("HandleSignInResult", "Handling sign-in result. Is new user: ${signInResult.isNewUser}")
 
         when {
@@ -100,8 +102,18 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                     Log.d("HandleSignInResult", "Existing user logged in successfully. Navigating to home.")
                     dialogMessage = "Login successful. Welcome back!"
                     showSuccessDialog = true
-                    // Ensure this route is correct
 
+                    signInResult.data?.userId?.let {
+                        userViewModel.setUserId(it)
+                        Log.d("LoginPage", "Setting user ID: ${userViewModel.userId.value}")
+                        navController.navigate("profile_page") {
+                            popUpTo("main_page") {
+                                inclusive = true
+                            } // Clear the back stack, removing main_page
+
+                        }
+                        // Ensure this route is correct
+                    }
                 }
             }
             else -> {
@@ -121,7 +133,7 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                     val signInResult = googleAuthUiClient.signInWithIntent(
                         intent = result.data ?: return@launch
                     )
-                    handleSignInResult(signInResult, navController)
+                    handleSignInResult(signInResult, navController, userViewModel)
                 }
             }
         }
@@ -367,7 +379,7 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
     }
 }
 
-
+//Firebase
 fun handleSignInResult2(result: SignInResult, navController: NavController, userViewModel: UserProfileProvider) {
     // Assuming you have the userId from the result
     result.data?.userId?.let {
@@ -380,7 +392,7 @@ fun handleSignInResult2(result: SignInResult, navController: NavController, user
             }
 
         }else{
-            navController.navigate("recipe_main_page") {
+            navController.navigate("profile_page") {
                 popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
             }
 
@@ -388,6 +400,7 @@ fun handleSignInResult2(result: SignInResult, navController: NavController, user
 
 
     }
+
     // Navigate to the next screen
 
 }

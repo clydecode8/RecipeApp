@@ -56,6 +56,29 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             }
     }
 
+    // Function to update the user profile in the ViewModel (Google)
+    fun updateUserProfile(userId: String) {
+        val db = FirebaseFirestore.getInstance()
+
+        // Fetch user profile data from Firestore
+        db.collection("users").document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    // Map document to UserProfile
+                    val userProfile = document.toObject(UserProfile::class.java)
+
+                    // Update the user profile in the ViewModel
+                    _userProfile.value = userProfile
+                } else {
+                    Log.d("UserViewModel", "No such document for user: $userId")
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.d("UserViewModel", "Get failed with ", exception)
+            }
+    }
+
     fun toggleLike(postId: String, liked: Boolean) {
         val db = FirebaseFirestore.getInstance()
         val currentUserId = _userId.value ?: return
@@ -364,7 +387,7 @@ class UserViewModel : ViewModel(), UserProfileProvider {
 }
 
 
-    data class UserProfile(
+data class UserProfile(
     val name: String? = null,
     val email: String? = null,
     val phoneNumber: String? = null,

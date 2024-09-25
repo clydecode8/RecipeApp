@@ -42,6 +42,7 @@ import com.example.assignme.ViewModel.MockUserViewModel
 import com.example.assignme.R
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserProfileProvider
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 
@@ -326,14 +327,23 @@ fun uploadProfilePictureToFirebase(
     userDocRef.get().addOnSuccessListener { document ->
         val currentProfilePictureUrl = document.getString("profilePictureUrl")
 
+        // Log the current profile picture URL for debugging
+        Log.d("Firebase", "Current profile picture URL: $currentProfilePictureUrl")
+
         // Delete the old profile picture if it exists
-        currentProfilePictureUrl?.let { oldUrl ->
-            val oldPictureRef = FirebaseStorage.getInstance().getReferenceFromUrl(oldUrl)
-            oldPictureRef.delete().addOnSuccessListener {
-                Log.d("Firebase", "Old profile picture deleted successfully.")
-            }.addOnFailureListener { exception ->
-                Log.e("Firebase", "Failed to delete old profile picture: ${exception.message}")
+        if (!currentProfilePictureUrl.isNullOrEmpty()) {
+            try {
+                val oldPictureRef = FirebaseStorage.getInstance().getReferenceFromUrl(currentProfilePictureUrl)
+                oldPictureRef.delete().addOnSuccessListener {
+                    Log.d("Firebase", "Old profile picture deleted successfully.")
+                }.addOnFailureListener { exception ->
+                    Log.e("Firebase", "Failed to delete old profile picture: ${exception.message}")
+                }
+            } catch (e: IllegalArgumentException) {
+                Log.e("Firebase", "Invalid URL for old profile picture: $currentProfilePictureUrl")
             }
+        } else {
+            Log.d("Firebase", "No old profile picture to delete.")
         }
 
         // Proceed with uploading the new profile picture
@@ -346,7 +356,6 @@ fun uploadProfilePictureToFirebase(
                 profilePicturesRef.downloadUrl.addOnSuccessListener { downloadUrl ->
                     val newProfilePictureUrl = downloadUrl.toString()
 
-                    // Update Firestore with the new profile picture URL
                     // Update Firestore with the new profile picture URL
                     val profilePicData: Map<String, Any> = mapOf("profilePictureUrl" to newProfilePictureUrl)
 
@@ -376,6 +385,70 @@ fun uploadProfilePictureToFirebase(
     }
 }
 
+
+//fun uploadProfilePictureToFirebase(
+//    userId: String,
+//    uri: Uri,
+//    onComplete: (String?) -> Unit
+//) {
+//    // Firestore reference
+//    val db = FirebaseFirestore.getInstance()
+//    val userDocRef = db.collection("users").document(userId)
+//
+//    // First, retrieve the current profile picture URL
+//    userDocRef.get().addOnSuccessListener { document ->
+//        val currentProfilePictureUrl = document.getString("profilePictureUrl")
+//
+//        // Delete the old profile picture if it exists
+//        currentProfilePictureUrl?.let { oldUrl ->
+//            val oldPictureRef = FirebaseStorage.getInstance().getReferenceFromUrl(oldUrl)
+//            oldPictureRef.delete().addOnSuccessListener {
+//                Log.d("Firebase", "Old profile picture deleted successfully.")
+//            }.addOnFailureListener { exception ->
+//                Log.e("Firebase", "Failed to delete old profile picture: ${exception.message}")
+//            }
+//        }
+//
+//        // Proceed with uploading the new profile picture
+//        val storageRef = FirebaseStorage.getInstance().reference
+//        val profilePicturesRef = storageRef.child("users/$userId/profile_picture/${System.currentTimeMillis()}.jpg")
+//
+//        profilePicturesRef.putFile(uri)
+//            .addOnSuccessListener {
+//                // Retrieve the new download URL
+//                profilePicturesRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+//                    val newProfilePictureUrl = downloadUrl.toString()
+//
+//                    // Update Firestore with the new profile picture URL
+//                    // Update Firestore with the new profile picture URL
+//                    val profilePicData: Map<String, Any> = mapOf("profilePictureUrl" to newProfilePictureUrl)
+//
+//                    userDocRef.update(profilePicData)
+//                        .addOnSuccessListener {
+//                            Log.d("Firestore", "New profile picture URL updated successfully.")
+//                            onComplete(newProfilePictureUrl)
+//                        }
+//                        .addOnFailureListener { exception ->
+//                            Log.e("Firestore", "Failed to update profile picture URL in Firestore: ${exception.message}")
+//                            onComplete(null)
+//                        }
+//
+//                }.addOnFailureListener { exception ->
+//                    Log.e("Firebase", "Failed to get new profile picture URL: ${exception.message}")
+//                    onComplete(null)
+//                }
+//            }
+//            .addOnFailureListener { exception ->
+//                Log.e("Firebase", "Failed to upload new profile picture: ${exception.message}")
+//                onComplete(null)
+//            }
+//
+//    }.addOnFailureListener { exception ->
+//        Log.e("Firestore", "Failed to retrieve current profile picture: ${exception.message}")
+//        onComplete(null)
+//    }
+//}
+
 private fun saveUserProfile(
     userId: String,
     name: String,
@@ -387,6 +460,11 @@ private fun saveUserProfile(
     onSuccess: (Boolean) -> Unit
 ) {
     val db = FirebaseFirestore.getInstance()
+    val auth = FirebaseAuth.getInstance()
+    val user = auth.currentUser
+
+    // Extract authentication method from user providers
+    val authProvider = user?.providerData?.getOrNull(1)?.providerId ?: "unknown"
 
     // Create a user profile map
     val userProfile = hashMapOf(
@@ -395,7 +473,8 @@ private fun saveUserProfile(
         "phoneNumber" to phoneNumber,
         "country" to country,
         "gender" to gender,
-        "profilePictureUrl" to (profilePictureUri ?: null) // Set to null if profilePictureUri is null
+        "profilePictureUrl" to (profilePictureUri ?: null), // Set to null if profilePictureUri is null
+        "authmethod" to authProvider  // Automatically set the auth method
     )
 
     // Save to Firestore
@@ -410,7 +489,6 @@ private fun saveUserProfile(
             onSuccess(false)
         }
 }
-
 
 
 @Composable
