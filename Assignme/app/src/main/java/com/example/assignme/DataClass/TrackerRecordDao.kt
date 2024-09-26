@@ -28,4 +28,7 @@ interface TrackerRecordDao {
     // New function to retrieve calories intake for a specific date
     @Query("SELECT caloriesIntake FROM tracker WHERE date = :date LIMIT 1")
     suspend fun getCaloriesByDate(date: LocalDate): Float?
+
+    @Query("SELECT * FROM tracker WHERE date BETWEEN :startDate AND :endDate ORDER BY date ASC")
+    suspend fun getEntriesForDateRange(startDate: String, endDate: String): List<TrackerRecord>
 }

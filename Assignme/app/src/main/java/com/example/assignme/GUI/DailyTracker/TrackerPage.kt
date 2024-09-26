@@ -1,5 +1,6 @@
 package com.example.assignme.GUI.DailyTracker
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -11,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -21,6 +23,13 @@ import com.example.assignme.ViewModel.TrackerViewModel
 import com.example.assignme.ViewModel.UserViewModel
 import java.time.LocalDate
 import androidx.compose.ui.platform.LocalContext
+import com.example.assignme.DataClass.TrackerRecord
+import com.patrykandpatrick.vico.core.entry.entryModelOf
+import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import com.patrykandpatrick.vico.compose.chart.column.columnChart
+import com.patrykandpatrick.vico.compose.axis.horizontal.bottomAxis
+import com.patrykandpatrick.vico.compose.axis.vertical.startAxis
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,56 +39,50 @@ fun TrackerPage(
     userViewModel: UserViewModel,
     trackerViewModel: TrackerViewModel
 ) {
-    // Observe userId and current water intake as state
     val userId by userViewModel.userId.observeAsState()
     val currentWaterIntake by trackerViewModel.currentWaterIntake.observeAsState(0)
 
-    // Fetch user data based on the userId
     LaunchedEffect(userId) {
-        Log.d("TrackerPage", "Fetching tracker data for userId: $userId")
         userId?.let { id ->
             userViewModel.fetchTrackerData(id) { trackerData ->
                 if (trackerData == null || trackerData.weight.isBlank() || trackerData.height.isBlank() || trackerData.bodyImageUri == null) {
-                    Log.w("TrackerPage", "User data incomplete, navigating to setup_info_page")
                     navController.navigate("setup_info_page")
-                } else {
-                    Log.d("TrackerPage", "Tracker data fetched successfully: $trackerData")
                 }
             }
         }
     }
 
-    // State variables to handle live updates
     var weight by remember { mutableStateOf("0") }
     var calories by remember { mutableStateOf(0) }
 
-    // State variables for success messages
+    val weightHistory by trackerViewModel.weightHistory.observeAsState(emptyList())
+    val calorieHistory by trackerViewModel.calorieHistory.observeAsState(emptyList())
+
     var weightUpdateMessage by remember { mutableStateOf("") }
     var calorieAddMessage by remember { mutableStateOf("") }
     var waterIntakeMessage by remember { mutableStateOf("") }
 
-    // Get the LocalContext
     val context = LocalContext.current
 
-    // Toast message effects
+    // Display toast messages for updates
     LaunchedEffect(weightUpdateMessage) {
         if (weightUpdateMessage.isNotEmpty()) {
             Toast.makeText(context, weightUpdateMessage, Toast.LENGTH_SHORT).show()
-            weightUpdateMessage = "" // Reset the message
+            weightUpdateMessage = ""
         }
     }
 
     LaunchedEffect(calorieAddMessage) {
         if (calorieAddMessage.isNotEmpty()) {
             Toast.makeText(context, calorieAddMessage, Toast.LENGTH_SHORT).show()
-            calorieAddMessage = "" // Reset the message
+            calorieAddMessage = ""
         }
     }
 
     LaunchedEffect(waterIntakeMessage) {
         if (waterIntakeMessage.isNotEmpty()) {
             Toast.makeText(context, waterIntakeMessage, Toast.LENGTH_SHORT).show()
-            waterIntakeMessage = "" // Reset the message
+            waterIntakeMessage = ""
         }
     }
 
@@ -95,50 +98,137 @@ fun TrackerPage(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            WeightSection(
-                weight = weight,
-                onWeightChange = { weight = it },
-                onUpdateClick = {
-                    if (weight.isNotEmpty()) {
-                        val currentDate = LocalDate.now()
-                        Log.d("TrackerPage", "Updating weight to $weight for date $currentDate")
-                        trackerViewModel.updateWeight(currentDate, weight.toFloat())
-                        weightUpdateMessage = "Successfully updated weight to $weight kg."
-                    } else {
-                        Log.w("TrackerPage", "Weight input is empty, cannot update.")
+            // Weight Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    // Title Row
+                    Text(text = "Weight", style = MaterialTheme.typography.headlineSmall)
+
+                    // Row for weight value and chart
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Left Column for weight value
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(text = "$weight Kg", style = MaterialTheme.typography.headlineMedium)
+                        }
+
+                        // Right Column for Weight Chart
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 16.dp)
+                                .size(height = 100.dp, width = 150.dp) // Set height and width here
+                        ) {
+                            WeightChart(weightHistory)
+                        }
+                    }
+
+                    // Last Row for Text Box and Button
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextField(
+                            value = weight,
+                            onValueChange = { weight = it },
+                            label = { Text("Today's weight") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Button(onClick = {
+                            if (weight.isNotEmpty()) {
+                                val currentDate = LocalDate.now()
+                                trackerViewModel.updateWeight(currentDate, weight.toFloat())
+                                weightUpdateMessage = "Successfully updated weight to $weight kg."
+                            }
+                        }) {
+                            Text("Update")
+                        }
                     }
                 }
-            )
+            }
 
+            // Water Intake Section
             WaterIntakeSection(
                 currentWaterIntake = currentWaterIntake,
                 onAddWaterClick = {
                     val currentDate = LocalDate.now()
-                    Log.d("TrackerPage", "Adding water intake for date $currentDate")
                     trackerViewModel.addWaterIntake(currentDate)
                     waterIntakeMessage = "Water intake updated."
                 }
             )
 
-            CaloriesSection(
-                calories = calories,
-                onCaloriesChange = { calories = it.toIntOrNull() ?: 0 },
-                onAddClick = {
-                    if (calories > 0) {
-                        val currentDate = LocalDate.now()
-                        Log.d("TrackerPage", "Adding $calories calories for date $currentDate")
-                        trackerViewModel.addCalories(currentDate, calories.toFloat())
-                        calorieAddMessage = "Successfully added $calories kcal."
-                    } else {
-                        Log.w("TrackerPage", "Calories input is invalid (<= 0), cannot add.")
+            // Calories Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    // Title Row
+                    Text(text = "Calories", style = MaterialTheme.typography.headlineSmall)
+
+                    // Row for calorie value and chart
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Left Column for calorie value
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(text = "$calories Kcal", style = MaterialTheme.typography.headlineMedium)
+                        }
+
+                        // Right Column for Calories Chart
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 16.dp)
+                                .size(height = 100.dp, width = 150.dp) // Set height and width here
+                        ) {
+                            CaloriesChart(calorieHistory)
+                        }
+                    }
+
+                    // Last Row for Text Box and Button
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextField(
+                            value = calories.toString(),
+                            onValueChange = { calories = it.toIntOrNull() ?: 0 },
+                            label = { Text("Today's calories") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Button(onClick = {
+                            if (calories > 0) {
+                                val currentDate = LocalDate.now()
+                                trackerViewModel.addCalories(currentDate, calories.toFloat())
+                                calorieAddMessage = "Successfully added $calories kcal."
+                            }
+                        }) {
+                            Text("Add")
+                        }
                     }
                 }
-            )
+            }
 
             // Daily Analysis Button
             Button(
                 onClick = {
-                    Log.d("TrackerPage", "Navigating to Daily Analysis")
                     navController.navigate("daily_analysis")
                 },
                 modifier = Modifier
@@ -149,6 +239,64 @@ fun TrackerPage(
             }
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun WeightChart(weightHistory: List<TrackerRecord>) {
+    // Prepare the chart data as pairs of (x: day of month, y: weight)
+    val chartData = weightHistory.map { it.date.dayOfMonth.toFloat() to it.weight }
+
+    // Log the chart data
+    Log.d("WeightChart", "Entries: ${chartData.size}, Data: $chartData")
+
+    // Create the entry model
+    val chartEntryModel = entryModelOf(*chartData.toTypedArray())
+
+    Chart(
+        chart = lineChart(),
+        model = chartEntryModel,
+        startAxis = startAxis(
+            title = "Weight (kg)",
+            valueFormatter = { value, _ -> value.toString() }
+        ),
+        bottomAxis = bottomAxis(
+            title = "Day of Month",
+            valueFormatter = { value, _ -> value.toInt().toString() }
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
+    )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CaloriesChart(calorieHistory: List<TrackerRecord>) {
+    // Prepare the chart data as pairs of (x: day of month, y: calories intake)
+    val chartData = calorieHistory.map { it.date.dayOfMonth.toFloat() to it.caloriesIntake.toFloat() }
+
+    // Log the chart data
+    Log.d("CaloriesChart", "Entries: ${chartData.size}, Data: $chartData")
+
+    // Create the entry model
+    val chartEntryModel = entryModelOf(*chartData.toTypedArray())
+
+    Chart(
+        chart = columnChart(),
+        model = chartEntryModel,
+        startAxis = startAxis(
+            title = "Calories",
+            valueFormatter = { value, _ -> value.toInt().toString() }
+        ),
+        bottomAxis = bottomAxis(
+            title = "Day of Month",
+            valueFormatter = { value, _ -> value.toInt().toString() }
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
+    )
 }
 
 @Composable
@@ -248,3 +396,4 @@ fun CaloriesSection(
         }
     }
 }
+
