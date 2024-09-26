@@ -21,8 +21,9 @@ import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserViewModel
 import com.example.assignme.ui.theme.AssignmeTheme
 import com.google.firebase.FirebaseApp
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private lateinit var themeViewModel: ThemeViewModel

@@ -2,6 +2,7 @@ package com.example.assignme
 
 import android.annotation.SuppressLint
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -41,9 +42,9 @@ import com.example.assignme.GUI.Recipe.RecipeUploadPage
 import com.example.assignme.GUI.Recipe.SchedulePage
 import com.example.assignme.GUI.Recipe.SearchResultsPage
 import com.example.assignme.ViewModel.RecipeViewModel
+import com.example.assignme.ViewModel.TrackerViewModel
 import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserViewModel
-
 
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnrememberedGetBackStackEntry")
@@ -179,10 +180,19 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         }
 
         composable("setup_info_page") {
+            Log.d("Navigation", "Navigating to Setup Info Page")
             SetUpInfo(navController, userViewModel)
         }
+
+        composable("daily_analysis") {
+            Log.d("Navigation", "Navigating to Daily Analysis Page")
+            val trackerViewModel: TrackerViewModel = hiltViewModel()
+            DailyAnalysis(navController,trackerViewModel)
+        }
+
         composable("tracker_page") {
-            TrackerPage(navController, userViewModel)
+            val trackerViewModel: TrackerViewModel = hiltViewModel()
+            TrackerPage(navController, userViewModel, trackerViewModel)
         }
 
         composable("manageReportPost"){

@@ -2,7 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     id("com.google.gms.google-services")
-
+    id("com.google.devtools.ksp")
+    id("dagger.hilt.android.plugin") // Hilt plugin
+    id("kotlin-kapt")
 }
 
 android {
@@ -40,6 +42,7 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -52,18 +55,34 @@ android {
 }
 
 dependencies {
+    val vicoVersion = "1.6.5"
+    implementation("com.patrykandpatrick.vico:core:$vicoVersion")
+    implementation("com.patrykandpatrick.vico:compose:$vicoVersion")
+    implementation("com.patrykandpatrick.vico:compose-m2:$vicoVersion")
+    implementation("com.patrykandpatrick.vico:compose-m3:$vicoVersion")
 
-    implementation ("io.coil-kt:coil-compose:2.0.0") // Check for the latest version
-    // Import the BoM for the Firebase platform
+    // dagger-hilt
+    implementation("com.google.dagger:hilt-android:2.48")
+    ksp("com.google.dagger:hilt-compiler:2.48") // Use KSP for annotation processing
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0") // Hilt navigation for Jetpack Compose
+
+    // room
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
+
+    implementation ("io.coil-kt:coil-compose:2.0.0")
+
+    // Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
 
     // Add the dependency for the Firebase Authentication library
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth")
-    implementation ("com.google.accompanist:accompanist-permissions:0.28.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.28.0")
 
-    implementation ("com.google.accompanist:accompanist-pager:0.28.0")
-    implementation ("com.google.accompanist:accompanist-pager-indicators:0.28.0")
+    implementation("com.google.accompanist:accompanist-pager:0.28.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.28.0")
 
     implementation ("com.google.android.gms:play-services-auth:20.0.1") // or the latest version
 
@@ -96,7 +115,7 @@ dependencies {
     implementation(libs.androidx.room.common)
     implementation(libs.androidx.room.ktx)
     implementation(libs.firebase.database.ktx)
-    //implementation(libs.androidx.ui.desktop)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -105,7 +124,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
-
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 }
