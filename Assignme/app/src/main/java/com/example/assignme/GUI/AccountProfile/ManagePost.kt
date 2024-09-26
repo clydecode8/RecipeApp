@@ -2,12 +2,15 @@ package com.example.assignme.GUI.AccountProfile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.darkColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.lightColors
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,6 +34,7 @@ import com.example.assignme.ViewModel.UserProfileProvider
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SocialFeedScreen(navController: NavController, userViewModel: UserProfileProvider) {
+
     Scaffold(
         topBar = { AppTopBar(title = "Back", navController = navController, modifier = Modifier) },
 

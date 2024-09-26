@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,16 +38,17 @@ import com.example.assignme.GUI.Recipe.RecipeUploadPage
 import com.example.assignme.GUI.Recipe.SchedulePage
 import com.example.assignme.GUI.Recipe.SearchResultsPage
 import com.example.assignme.ViewModel.RecipeViewModel
+import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserViewModel
 
 
 @SuppressLint("UnrememberedGetBackStackEntry")
 @Composable
-fun NavigationGraph(navController: NavHostController = rememberNavController(), userViewModel: UserViewModel){
+fun NavigationGraph(navController: NavHostController = rememberNavController(), userViewModel: UserViewModel, themeViewModel: ThemeViewModel){
 
     NavHost(
         navController = navController,
-        startDestination = "main_page"
+        startDestination = "main_page",
     ){
 
         composable("main_page"){
@@ -76,12 +78,12 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
 
         composable("profile_page"){
 
-            ProfilePage(navController, userViewModel)
+            ProfilePage(navController, userViewModel, themeViewModel)
         }
 
         composable("edit_profile") {
 
-            EditProfileScreen(navController, userViewModel)
+            EditProfileScreen(navController, userViewModel, themeViewModel)
         }
 
         composable("admin_page"){

@@ -6,12 +6,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.TextButton
+import androidx.compose.material.darkColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.lightColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -40,6 +44,8 @@ import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.AndroidBar.AppTopBar
 import com.example.assignme.ViewModel.MockUserViewModel
 import com.example.assignme.R
+import com.example.assignme.ViewModel.MockThemeViewModel
+import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserProfileProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -50,8 +56,10 @@ import com.google.firebase.storage.FirebaseStorage
 @Composable
 fun EditProfileScreen(
     navController: NavController,
-    userViewModel: UserProfileProvider
+    userViewModel: UserProfileProvider,
+    themeViewModel: ThemeViewModel
 ) {
+
     // Lists of options
     val countries = listOf("USA", "Canada", "Mexico", "UK", "Germany")
     val genders = listOf("Male", "Female", "Non-binary", "Other")
@@ -225,7 +233,7 @@ fun EditProfileScreen(
                         .fillMaxWidth()
                         .height(56.dp)
                 ) {
-                    Text("SUBMIT", color = Color.White)
+                    Text("SUBMIT")
                 }
             }
 
@@ -242,8 +250,6 @@ fun EditProfileScreen(
         }
     }
 }
-
-
 
 @Composable
 fun ProfileTextField(
@@ -532,9 +538,11 @@ fun ErrorDialog(onDismiss: () -> Unit) {
 @Composable
 fun PreviewEditProfileScreen() {
 
+    val mockThemeViewModel = MockThemeViewModel()
     EditProfileScreen(
         navController = rememberNavController(),
-        userViewModel = MockUserViewModel()
+        userViewModel = MockUserViewModel(),
+        themeViewModel = mockThemeViewModel
     )
 }
 
