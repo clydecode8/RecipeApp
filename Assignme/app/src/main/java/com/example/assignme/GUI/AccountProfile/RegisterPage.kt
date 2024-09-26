@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,8 +33,10 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.darkColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.lightColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -215,7 +218,6 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
                 .padding(innerPadding)
         ) {
 
@@ -236,7 +238,6 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                         text = "Hello! Register to get started.",
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
                         lineHeight = 40.sp // Set the line height here
                     )
                 }
@@ -245,7 +246,6 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                     // Tabs for Registration Forms
                     TabRow(
                         selectedTabIndex = pagerState.currentPage,
-                        contentColor = Color.Black
                     ) {
                         Tab(
                             selected = pagerState.currentPage == 0,
@@ -392,7 +392,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                             message = dialogMessage,
                             onDismiss = {
                                 showSuccessDialog = false
-                                //navController.navigate("login_page")
+                                navController.navigate("login_page")
                             }
                         )
                     }
@@ -410,16 +410,14 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(horizontal = 8.dp),
-                            thickness = 1.dp,
-                            color = Color.Gray
+                            thickness = 1.dp
                         )
-                        Text(text = "Or Register with", color = Color.Black)
+                        Text(text = "Or Register with")
                         HorizontalDivider(
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(horizontal = 8.dp),
                             thickness = 1.dp,
-                            color = Color.Gray
                         )
                     }
                 }
@@ -639,7 +637,8 @@ fun submitRegistration(
                     "phoneNumber" to phoneNumber,
                     "profilePictureUrl" to profilePictureUrl, // This will be null if not provided
                     "gender" to gender,
-                    "country" to country
+                    "country" to country,
+                    "authmethod" to "firebase"
                 )
 
                 db.collection("users").document(userId)
@@ -694,10 +693,6 @@ fun PagerIndicator(pagerState: PagerState) {
             Box(
                 modifier = Modifier
                     .size(8.dp)
-                    .background(
-                        color = if (pagerState.currentPage == page) Color.Black else Color.Gray,
-                        shape = CircleShape
-                    )
 
             )
         }

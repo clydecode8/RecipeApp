@@ -28,6 +28,9 @@ class UserViewModel : ViewModel(), UserProfileProvider {
     private val _users = MutableLiveData<Map<String, UserProfile>>()
     val users: LiveData<Map<String, UserProfile>> get() = _users
 
+    private val _reportedPosts = MutableLiveData<List<Post>>()
+    val reportedPosts: LiveData<List<Post>> = _reportedPosts
+
     override fun setUserId(id: String) {
         _userId.value = id
         if (!id.isNullOrEmpty()) {
@@ -47,6 +50,29 @@ class UserViewModel : ViewModel(), UserProfileProvider {
                 if (document != null) {
                     val profile = document.toObject(UserProfile::class.java)
                     _userProfile.value = profile
+                } else {
+                    Log.d("UserViewModel", "No such document for user: $userId")
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.d("UserViewModel", "Get failed with ", exception)
+            }
+    }
+
+    // Function to update the user profile in the ViewModel (Google)
+    fun updateUserProfile(userId: String) {
+        val db = FirebaseFirestore.getInstance()
+
+        // Fetch user profile data from Firestore
+        db.collection("users").document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    // Map document to UserProfile
+                    val userProfile = document.toObject(UserProfile::class.java)
+
+                    // Update the user profile in the ViewModel
+                    _userProfile.value = userProfile
                 } else {
                     Log.d("UserViewModel", "No such document for user: $userId")
                 }
@@ -202,26 +228,50 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             }
     }
 
-    private fun fetchPosts() {
-        val currentUserId = _userId.value
-        if (currentUserId.isNullOrEmpty()) {
-            Log.w("UserViewModel", "User ID is null or empty, skipping post fetch.")
-            return
-        }
-
+    fun reportPost(postId: String, reason: String, reportedBy: String) {
         val db = FirebaseFirestore.getInstance()
-        Log.d("UserViewModel", "Fetching posts for user ID: $currentUserId")
+        val postRef = db.collection("posts").document(postId)
+
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(postRef)
+            val currentPost = snapshot.toObject(Post::class.java)
+            if (currentPost != null) {
+                val updatedPost = currentPost.copy(
+                    reportReason = reason,
+                    reportedBy = reportedBy // 更新举报者 ID
+                )
+                transaction.set(postRef, updatedPost)
+            }
+        }.addOnSuccessListener {
+            // 更新本地数据
+            val currentPosts = _posts.value?.toMutableList() ?: mutableListOf()
+            val postIndex = currentPosts.indexOfFirst { it.id == postId }
+            if (postIndex != -1) {
+                currentPosts[postIndex] = currentPosts[postIndex].copy(
+                    reportReason = reason,
+                    reportedBy = reportedBy// 更新本地数据
+                )
+                _posts.value = currentPosts
+                _reportedPosts.value = currentPosts.filter { it.reportReason != null }
+            }
+        }.addOnFailureListener { e ->
+            Log.w("UserViewModel", "Error reporting post", e)
+        }
+    }
+
+    private fun fetchPosts() {
+        val db = FirebaseFirestore.getInstance()
         db.collection("posts")
             .orderBy("timestamp")
             .get()
             .addOnSuccessListener { documents ->
                 val postList = documents.mapNotNull { document ->
                     val post = document.toObject(Post::class.java)
-                    post.copy(id = document.id) // 设置 post 的 id
+                    post.copy(id = document.id)
                 }
-                Log.d("UserViewModel", "Fetched posts: $postList")
                 _posts.value = postList
-                fetchUsers() // 获取用户信息
+                _reportedPosts.value = postList.filter { it.reportReason != null }
+                fetchUsers()
             }
             .addOnFailureListener { exception ->
                 Log.w("UserViewModel", "Error getting posts", exception)
@@ -277,6 +327,32 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             }
     }
 
+    fun ignoreReport(postId: String) {
+        val db = FirebaseFirestore.getInstance()
+        val postRef = db.collection("posts").document(postId)
+
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(postRef)
+            val currentPost = snapshot.toObject(Post::class.java)
+            if (currentPost != null) {
+                val updatedPost = currentPost.copy(reportReason = null)
+                transaction.set(postRef, updatedPost)
+            }
+        }.addOnSuccessListener {
+            // Update local data
+            val currentPosts = _posts.value?.toMutableList() ?: mutableListOf()
+            val postIndex = currentPosts.indexOfFirst { it.id == postId }
+            if (postIndex != -1) {
+                currentPosts[postIndex] = currentPosts[postIndex].copy(reportReason = null)
+                _posts.value = currentPosts
+
+                // Update reportedPosts
+                _reportedPosts.value = currentPosts.filter { it.reportReason != null }
+            }
+        }.addOnFailureListener { e ->
+            Log.w("UserViewModel", "Error ignoring report", e)
+        }
+    }
     // 更新帖子的内容
     fun updatePost(postId: String, newContent: String) {
         val db = FirebaseFirestore.getInstance()
@@ -364,7 +440,7 @@ class UserViewModel : ViewModel(), UserProfileProvider {
 }
 
 
-    data class UserProfile(
+data class UserProfile(
     val name: String? = null,
     val email: String? = null,
     val phoneNumber: String? = null,
@@ -381,7 +457,9 @@ data class Post(
     val likes: Int = 0,
     val likedUsers: List<String> = emptyList(), // 存储点赞用户的 ID
     val comments: Int = 0,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val reportReason: String? = null,
+    val reportedBy: String? = null
 )
 
 

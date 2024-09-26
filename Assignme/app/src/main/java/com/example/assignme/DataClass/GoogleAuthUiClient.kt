@@ -10,6 +10,7 @@ import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.Firebase
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -36,6 +37,7 @@ class GoogleAuthUiClient(
         val credential = oneTapClient.getSignInCredentialFromIntent(intent)
         val googleIdToken = credential.googleIdToken
         val googleCredentials = GoogleAuthProvider.getCredential(googleIdToken, null)
+
         return try {
             val authResult = auth.signInWithCredential(googleCredentials).await()
             val user = authResult.user
@@ -44,6 +46,31 @@ class GoogleAuthUiClient(
             // Log user data if available
             if (isNewUser) {
                 Log.d("SignInWithIntent", "New user data: ${user?.run { "ID: $uid, Username: $displayName, Profile URL: ${photoUrl?.toString()}" }}")
+
+                // Create a HashMap for Firestore
+                val userMap = hashMapOf(
+                    "name" to user?.displayName,
+                    "email" to user?.email,
+                    "userId" to user?.uid,
+                    "phoneNumber" to null, // You can add fields for phoneNumber, gender, country later
+                    "profilePictureUrl" to user?.photoUrl?.toString(),
+                    "gender" to null, // Placeholder for additional fields
+                    "country" to null,
+                    "authmethod" to "google" // Store the authentication method
+                )
+
+                // Store user data in Firestore
+                val db = FirebaseFirestore.getInstance()
+                user?.uid?.let { userId ->
+                    db.collection("users").document(userId)
+                        .set(userMap)
+                        .addOnSuccessListener {
+                            Log.d("Firestore", "User data added to Firestore.")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("Firestore", "Error adding user to Firestore: ${e.message}")
+                        }
+                }
             } else {
                 Log.d("SignInWithIntent", "Existing user data: Data not included")
             }
@@ -58,13 +85,12 @@ class GoogleAuthUiClient(
                         )
                     }
                 } else {
-                    // For existing users, set data to null
                     null
                 },
                 errorMessage = null,
                 isNewUser = isNewUser
             )
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
             if (e is CancellationException) throw e
             SignInResult(
@@ -73,6 +99,7 @@ class GoogleAuthUiClient(
             )
         }
     }
+
 
     suspend fun signInWithIntent(intent: Intent): SignInResult {
         val credential = oneTapClient.getSignInCredentialFromIntent(intent)
@@ -149,4 +176,6 @@ class GoogleAuthUiClient(
             .build()
     }
 }
+
+
 

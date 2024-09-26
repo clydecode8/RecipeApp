@@ -40,13 +40,12 @@ fun AppBottomNavigation(navController: NavController) {
 
     Box(
 
-        modifier = Modifier.background(Color.White).fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
     ){
 
         NavigationBar(
             modifier = Modifier
-                .clip(BottomNavWithCurveShape()) // Apply the custom shape
-                .background(Color.White),
+                .clip(BottomNavWithCurveShape()), // Apply the custom shape
             contentColor = Color.Black
         ) {
             val navBackStackEntry by navController.currentBackStackEntryAsState()

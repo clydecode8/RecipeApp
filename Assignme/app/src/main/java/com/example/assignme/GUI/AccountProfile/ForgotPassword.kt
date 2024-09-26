@@ -2,6 +2,7 @@ package com.example.assignme.GUI.AccountProfile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.darkColors
+import androidx.compose.material.lightColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,7 +59,6 @@ fun ForgotPasswordPage(navController: NavController, userViewModel: UserViewMode
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
             .safeContentPadding()
             .statusBarsPadding()
     ) {
@@ -78,7 +80,7 @@ fun ForgotPasswordPage(navController: NavController, userViewModel: UserViewMode
                         // Navigate back
                         navController.navigateUp()
                     },
-                tint = Color.Black
+
             )
         }
 
@@ -96,13 +98,13 @@ fun ForgotPasswordPage(navController: NavController, userViewModel: UserViewMode
                 text = "OTP Verification",
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+
             )
             Spacer(modifier = Modifier.height(18.dp))
             Text(
                 text = "Don't worry! It occurs. Please enter the email address linked with your account.",
                 fontSize = 18.sp,
-                color = Color.Black
+
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -173,11 +175,9 @@ fun ForgotPasswordPage(navController: NavController, userViewModel: UserViewMode
                 Text(
                     text = "Didn't Received Code? ",
                     fontSize = 15.sp,
-                    color = Color.Black
                 )
                 Text(
                     text = "Resend",
-                    color = Color.Blue,
                     fontSize = 15.sp,
                     modifier = Modifier.clickable {
                         // Navigate to Register screen
