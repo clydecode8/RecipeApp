@@ -35,12 +35,14 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.format.DateTimeFormatter
 import androidx.compose.runtime.rememberCoroutineScope
+import com.example.assignme.ViewModel.ThemeViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SchedulePage(navController: NavController, viewModel: RecipeViewModel, userModel: UserViewModel,  onBackClick: () -> Unit) {
+fun SchedulePage(navController: NavController, viewModel: RecipeViewModel, userModel: UserViewModel,
+                 onBackClick: () -> Unit) {
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     Scaffold(
         topBar = {

@@ -1,6 +1,8 @@
 package com.example.assignme
 
 import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +45,7 @@ import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserViewModel
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnrememberedGetBackStackEntry")
 @Composable
 fun NavigationGraph(navController: NavHostController = rememberNavController(), userViewModel: UserViewModel, themeViewModel: ThemeViewModel){
@@ -168,7 +171,9 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         composable("schedule_page"){backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("recipe_main_page") }
             val viewModel: RecipeViewModel = viewModel(parentEntry)
-            SchedulePage(navController = navController, viewModel = viewModel, userModel = userViewModel) {
+            SchedulePage(navController = navController,
+                viewModel = viewModel,
+                userModel = userViewModel) {
 
             }
         }
