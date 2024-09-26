@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -90,156 +91,165 @@ fun TrackerPage(
         topBar = { AppTopBar(title = "Daily Tracker", navController = navController) },
         bottomBar = { AppBottomNavigation(navController = navController) }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Weight Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    // Title Row
-                    Text(text = "Weight", style = MaterialTheme.typography.headlineSmall)
-
-                    // Row for weight value and chart
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        // Left Column for weight value
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.Start
-                        ) {
-                            Text(text = "$weight Kg", style = MaterialTheme.typography.headlineMedium)
-                        }
+                        // Title Row
+                        Text(text = "Weight", style = MaterialTheme.typography.headlineSmall)
 
-                        // Right Column for Weight Chart
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 16.dp)
-                                .size(height = 100.dp, width = 150.dp) // Set height and width here
+                        // Row for weight value and chart
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            WeightChart(weightHistory)
-                        }
-                    }
-
-                    // Last Row for Text Box and Button
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TextField(
-                            value = weight,
-                            onValueChange = { weight = it },
-                            label = { Text("Today's weight") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        Button(onClick = {
-                            if (weight.isNotEmpty()) {
-                                val currentDate = LocalDate.now()
-                                trackerViewModel.updateWeight(currentDate, weight.toFloat())
-                                weightUpdateMessage = "Successfully updated weight to $weight kg."
+                            // Left Column for weight value
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(text = "$weight Kg", style = MaterialTheme.typography.headlineMedium)
                             }
-                        }) {
-                            Text("Update")
+
+                            // Right Column for Weight Chart
+                            Box(
+                                modifier = Modifier
+                                    .padding(start = 16.dp)
+                                    .size(height = 100.dp, width = 150.dp)
+                            ) {
+                                WeightChart(weightHistory)
+                            }
+                        }
+
+                        // Last Row for Text Box and Button
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            TextField(
+                                value = weight,
+                                onValueChange = { weight = it },
+                                label = { Text("Today's weight") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            Button(onClick = {
+                                if (weight.isNotEmpty()) {
+                                    val currentDate = LocalDate.now()
+                                    trackerViewModel.updateWeight(currentDate, weight.toFloat())
+                                    weightUpdateMessage = "Successfully updated weight to $weight kg."
+                                }
+                            }) {
+                                Text("Update")
+                            }
                         }
                     }
                 }
             }
 
             // Water Intake Section
-            WaterIntakeSection(
-                currentWaterIntake = currentWaterIntake,
-                onAddWaterClick = {
-                    val currentDate = LocalDate.now()
-                    trackerViewModel.addWaterIntake(currentDate)
-                    waterIntakeMessage = "Water intake updated."
-                }
-            )
+            item {
+                WaterIntakeSection(
+                    currentWaterIntake = currentWaterIntake,
+                    onAddWaterClick = {
+                        val currentDate = LocalDate.now()
+                        trackerViewModel.addWaterIntake(currentDate)
+                        waterIntakeMessage = "Water intake updated."
+                    }
+                )
+            }
 
             // Calories Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    // Title Row
-                    Text(text = "Calories", style = MaterialTheme.typography.headlineSmall)
-
-                    // Row for calorie value and chart
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        // Left Column for calorie value
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.Start
-                        ) {
-                            Text(text = "$calories Kcal", style = MaterialTheme.typography.headlineMedium)
-                        }
+                        // Title Row
+                        Text(text = "Calories", style = MaterialTheme.typography.headlineSmall)
 
-                        // Right Column for Calories Chart
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 16.dp)
-                                .size(height = 100.dp, width = 150.dp) // Set height and width here
+                        // Row for calorie value and chart
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            CaloriesChart(calorieHistory)
-                        }
-                    }
-
-                    // Last Row for Text Box and Button
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TextField(
-                            value = calories.toString(),
-                            onValueChange = { calories = it.toIntOrNull() ?: 0 },
-                            label = { Text("Today's calories") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        Button(onClick = {
-                            if (calories > 0) {
-                                val currentDate = LocalDate.now()
-                                trackerViewModel.addCalories(currentDate, calories.toFloat())
-                                calorieAddMessage = "Successfully added $calories kcal."
+                            // Left Column for calorie value
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(text = "$calories Kcal", style = MaterialTheme.typography.headlineMedium)
                             }
-                        }) {
-                            Text("Add")
+
+                            // Right Column for Calories Chart
+                            Box(
+                                modifier = Modifier
+                                    .padding(start = 16.dp)
+                                    .size(height = 100.dp, width = 150.dp)
+                            ) {
+                                CaloriesChart(calorieHistory)
+                            }
+                        }
+
+                        // Last Row for Text Box and Button
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            TextField(
+                                value = calories.toString(),
+                                onValueChange = { calories = it.toIntOrNull() ?: 0 },
+                                label = { Text("Today's calories") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            Button(onClick = {
+                                if (calories > 0) {
+                                    val currentDate = LocalDate.now()
+                                    trackerViewModel.addCalories(currentDate, calories.toFloat())
+                                    calorieAddMessage = "Successfully added $calories kcal."
+                                }
+                            }) {
+                                Text("Add")
+                            }
                         }
                     }
                 }
             }
 
             // Daily Analysis Button
-            Button(
-                onClick = {
-                    navController.navigate("daily_analysis")
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
-            ) {
-                Text("Daily Analysis")
+            item {
+                Button(
+                    onClick = {
+                        navController.navigate("daily_analysis")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                        .padding(bottom = 25.dp)
+                ) {
+                    Text("Daily Analysis")
+                }
             }
         }
     }
 }
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

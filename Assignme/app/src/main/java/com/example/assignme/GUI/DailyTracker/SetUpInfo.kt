@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,122 +48,122 @@ fun SetUpInfo(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.Center
+            .padding(horizontal = 16.dp)
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+            verticalArrangement = Arrangement.Top // Content at the top
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
+            item {
+                Spacer(modifier = Modifier.height(50.dp))
 
-            Text(
-                text = "Set up your information",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            InputField(
-                label = "Weight (KG):",
-                value = weight,
-                onValueChange = { weight = it },
-                keyboardType = KeyboardType.Number
-            )
-
-            InputField(
-                label = "Height (CM):",
-                value = height,
-                onValueChange = { height = it },
-                keyboardType = KeyboardType.Number
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Your current body image:",
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Button(
-                onClick = { imagePicker.launch("image/*") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
-            ) {
-                Text("Upload Image")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            imageUri?.let {
-                val painter = rememberAsyncImagePainter(
-                    ImageRequest.Builder(context)
-                        .data(it)
-                        .build()
+                Text(
+                    text = "Set up your information",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
                 )
-                Image(
-                    painter = painter,
-                    contentDescription = "Uploaded Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                InputField(
+                    label = "Weight (KG):",
+                    value = weight,
+                    onValueChange = { weight = it },
+                    keyboardType = KeyboardType.Number
                 )
-            }
 
-            Spacer(modifier = Modifier.weight(1f)) // Pushes the continue button to the bottom
+                InputField(
+                    label = "Height (CM):",
+                    value = height,
+                    onValueChange = { height = it },
+                    keyboardType = KeyboardType.Number
+                )
 
-            Button(
-                onClick = {
-                    if (!isLoading) {
-                        isLoading = true // Set loading state
-                        // Ensure userId is not null
-                        if (weight.isNotBlank() && height.isNotBlank() && userId != null) {
-                            val weightValue = weight.toFloatOrNull()
-                            val heightValue = height.toFloatOrNull()
+                Spacer(modifier = Modifier.height(16.dp))
 
-                            // Validate weight and height values
-                            if (weightValue != null && heightValue != null && weightValue > 0 && heightValue > 0) {
-                                userViewModel.saveUserData(
-                                    weight = weightValue.toString(),
-                                    height = heightValue.toString(),
-                                    imageUri = imageUri,
-                                    userId = userId!!,
-                                    onComplete = { success -> // Use the onComplete callback
-                                        isLoading = false // Reset loading state
-                                        if (success) {
-                                            Toast.makeText(context, "Data saved successfully!", Toast.LENGTH_SHORT).show()
-                                            navController.navigate("tracker_page") // Navigate to TrackerPage
-                                        } else {
-                                            Toast.makeText(context, "Failed to save data!", Toast.LENGTH_SHORT).show()
+                Text(
+                    text = "Your current body image:",
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Button(
+                    onClick = { imagePicker.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
+                ) {
+                    Text("Upload Image")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                imageUri?.let {
+                    val painter = rememberAsyncImagePainter(
+                        ImageRequest.Builder(context)
+                            .data(it)
+                            .build()
+                    )
+                    Image(
+                        painter = painter,
+                        contentDescription = "Uploaded Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp) // Smaller height for preview image
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        if (!isLoading) {
+                            isLoading = true // Set loading state
+
+                            // Ensure userId is not null and image is uploaded
+                            if (weight.isNotBlank() && height.isNotBlank() && imageUri != null && userId != null) {
+                                val weightValue = weight.toFloatOrNull()
+                                val heightValue = height.toFloatOrNull()
+
+                                // Validate weight and height values
+                                if (weightValue != null && heightValue != null && weightValue > 0 && heightValue > 0) {
+                                    userViewModel.saveUserData(
+                                        weight = weightValue.toString(),
+                                        height = heightValue.toString(),
+                                        imageUri = imageUri,
+                                        userId = userId!!,
+                                        onComplete = { success ->
+                                            isLoading = false
+                                            if (success) {
+                                                Toast.makeText(context, "Data saved successfully!", Toast.LENGTH_SHORT).show()
+                                                navController.navigate("tracker_page")
+                                            } else {
+                                                Toast.makeText(context, "Failed to save data!", Toast.LENGTH_SHORT).show()
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                } else {
+                                    Toast.makeText(context, "Please enter valid weight and height!", Toast.LENGTH_SHORT).show()
+                                    isLoading = false
+                                }
                             } else {
-                                Toast.makeText(context, "Please enter valid weight and height!", Toast.LENGTH_SHORT).show()
-                                isLoading = false // Reset loading state if validation fails
+                                Toast.makeText(context, "Please fill all fields and upload an image!", Toast.LENGTH_SHORT).show()
+                                isLoading = false
                             }
-                        } else {
-                            Toast.makeText(context, "Please fill all fields!", Toast.LENGTH_SHORT).show()
-                            isLoading = false // Reset loading state if fields are blank
                         }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White) // Show loading indicator
+                    } else {
+                        Text("Continue Journey")
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(color = Color.White) // Show loading indicator
-                } else {
-                    Text("Continue Journey")
                 }
             }
         }
     }
 }
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
