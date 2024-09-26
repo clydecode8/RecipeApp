@@ -2,6 +2,7 @@ package com.example.assignme.GUI.AccountProfile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.TextButton
+import androidx.compose.material.darkColors
+import androidx.compose.material.lightColors
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,14 +57,19 @@ import coil.compose.rememberImagePainter
 import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.R
 import com.example.assignme.DataClass.Recipe
+import com.example.assignme.ViewModel.MockThemeViewModel
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserProfileProvider
 import com.example.assignme.ViewModel.MockUserViewModel
+import com.example.assignme.ViewModel.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfilePage(navController: NavController, userViewModel: UserProfileProvider) {
+fun ProfilePage(navController: NavController,
+                userViewModel: UserProfileProvider,
+                themeViewModel: ThemeViewModel) {
 
+    var showDialog by remember { mutableStateOf(false) }
     // Sample data
     val recipes = listOf(
         Recipe(
@@ -96,11 +107,11 @@ fun ProfilePage(navController: NavController, userViewModel: UserProfileProvider
                         text = "My Profile",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
                     )
                 },
                 actions = {
-                    IconButton(onClick = { /* Handle icon click */ }) {
+                    IconButton(onClick = { showDialog = true })
+                    {
                         Icon(
                             painter = painterResource(id = R.drawable.moreoptions2), // Replace with your icon resource
                             contentDescription = "More actions",
@@ -108,8 +119,17 @@ fun ProfilePage(navController: NavController, userViewModel: UserProfileProvider
 
                         )
                     }
+                    // Display the theme selection dialog
+                    ThemeSelectionDialog(
+                        isVisible = showDialog,
+                        onDismiss = { showDialog = false },
+                        onThemeSelected = { selectedTheme ->
+                            themeViewModel.isDarkTheme.value = (selectedTheme == "Dark")
+                            showDialog = false // Dismiss the dialog after selection
+                        }
+                    )
                 },
-                modifier = Modifier.padding(top = 4.dp).background(Color.White)
+                modifier = Modifier.padding(top = 4.dp)
             )
         },
         bottomBar = { AppBottomNavigation(navController) }
@@ -118,7 +138,6 @@ fun ProfilePage(navController: NavController, userViewModel: UserProfileProvider
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White) // Set the entire screen background to white
                 .padding(paddingValues)
         ) {
             LazyColumn(
@@ -132,7 +151,6 @@ fun ProfilePage(navController: NavController, userViewModel: UserProfileProvider
                     TabRow(
                         selectedTabIndex = selectedTab,
 
-                        contentColor = Color.Black
                     ) {
 
                         Tab(
@@ -169,8 +187,39 @@ fun ProfilePage(navController: NavController, userViewModel: UserProfileProvider
                 }
             }
         }
+
     }
 }
+
+@Composable
+fun ThemeSelectionDialog(
+    isVisible: Boolean,
+    onDismiss: () -> Unit,
+    onThemeSelected: (String) -> Unit
+) {
+    if (isVisible) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(text = "Select Theme") },
+            text = {
+                Column {
+                    TextButton(onClick = { onThemeSelected("Light") }) {
+                        Text(text = "Light Theme")
+                    }
+                    TextButton(onClick = { onThemeSelected("Dark") }) {
+                        Text(text = "Dark Theme")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
 
 @Composable
 fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvider) {
@@ -273,8 +322,8 @@ fun RecipeCard(title: String, calories: String, duration: String, imageRes: Int)
                     .align(Alignment.BottomStart)
                     .padding(16.dp)
             ) {
-                Text(title, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
-                Text("$calories | $duration", color = MaterialTheme.colorScheme.onPrimary)
+                Text(title, fontWeight = FontWeight.Bold)
+                Text("$calories | $duration")
             }
         }
     }
@@ -286,7 +335,8 @@ fun PreviewProfile() {
 
     ProfilePage(
         navController = rememberNavController(),
-        userViewModel = MockUserViewModel()
+        userViewModel = MockUserViewModel(),
+        themeViewModel = MockThemeViewModel()
     )
 }
 

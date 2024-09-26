@@ -37,12 +37,13 @@ import com.example.assignme.GUI.Recipe.RecipeUploadPage
 import com.example.assignme.GUI.Recipe.SchedulePage
 import com.example.assignme.GUI.Recipe.SearchResultsPage
 import com.example.assignme.ViewModel.RecipeViewModel
+import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserViewModel
 
 
 @SuppressLint("UnrememberedGetBackStackEntry")
 @Composable
-fun NavigationGraph(navController: NavHostController = rememberNavController(), userViewModel: UserViewModel){
+fun NavigationGraph(navController: NavHostController = rememberNavController(), userViewModel: UserViewModel, themeViewModel: ThemeViewModel){
 
     NavHost(
         navController = navController,
@@ -76,12 +77,12 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
 
         composable("profile_page"){
 
-            ProfilePage(navController, userViewModel)
+            ProfilePage(navController, userViewModel, themeViewModel)
         }
 
         composable("edit_profile") {
 
-            EditProfileScreen(navController, userViewModel)
+            EditProfileScreen(navController, userViewModel, themeViewModel)
         }
 
         composable("admin_page"){

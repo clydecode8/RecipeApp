@@ -8,6 +8,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.darkColors
+import androidx.compose.material.lightColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -151,7 +154,6 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
             .safeContentPadding()
             .statusBarsPadding()
     ) {
@@ -194,7 +196,6 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                 lineHeight = 36.sp, // Adjust lineHeight to increase spacing between lines
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(end = 15.dp),
-                color = Color.Black
             )
 
             Spacer(modifier = Modifier.height(20.dp)) // Space between texts and text fields
@@ -230,7 +231,6 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                 ) {
                     Text(
                         text = "Forgot Password?",
-                        color = Color.Black,
                         modifier = Modifier.clickable {
                             // Navigate to ForgotPassword screen
                             navController.navigate("forgot_password_page")
@@ -282,15 +282,13 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                             .weight(1f)
                             .padding(horizontal = 8.dp),
                         thickness = 1.dp,
-                        color = Color.Gray
                     )
-                    Text(text = "or login with", color = Color.Black)
+                    Text(text = "or login with")
                     HorizontalDivider(
                         modifier = Modifier
                             .weight(1f)
                             .padding(horizontal = 8.dp),
                         thickness = 1.dp,
-                        color = Color.Gray
                     )
                 }
 
@@ -325,7 +323,6 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                     Text(
                         text = "Don't have an account? ",
                         fontSize = 12.sp,
-                        color = Color.Black
                     )
                     Text(
                         text = "Register now",
