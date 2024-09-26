@@ -5,8 +5,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -39,19 +39,15 @@ import com.example.assignme.DataClass.WindowInfo
 import com.example.assignme.DataClass.rememberWidowInfo
 import com.example.assignme.R
 import com.example.assignme.ViewModel.Comment
+import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserViewModel
 
 
 @Composable
-fun SocialAppUI(navController: NavController, userViewModel: UserViewModel) {
+fun SocialAppUI(navController: NavController, userViewModel: UserViewModel, themeViewModel: ThemeViewModel) {
     val windowInfo = rememberWidowInfo()
-    val colors = if (isSystemInDarkTheme()) {
-        darkColors()
-    } else {
-        lightColors()
-    }
-    MaterialTheme(colors = colors) {
+
         val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
         val userName = userProfile.name ?: "User"
         var selectedTab by remember { mutableStateOf(0) }
@@ -81,15 +77,14 @@ fun SocialAppUI(navController: NavController, userViewModel: UserViewModel) {
                 )
             }
         }
-    }
 }
 
 @Composable
 fun TabRowContent(selectedTab: Int, onTabSelected: (Int) -> Unit) {
     TabRow(
         selectedTabIndex = selectedTab,
-        backgroundColor = Color.DarkGray,
-        contentColor = Color.White,
+//        backgroundColor = Color.DarkGray,
+//        contentColor = Color.White,
         modifier = Modifier.height(50.dp)
     ) {
         Tab(
@@ -261,20 +256,20 @@ fun PostItem(
     postId: String,
     userViewModel: UserViewModel,
     imagePath: String? = null,
-    likedUsers: List<String>, // 传入已点赞用户的 ID 列表
-    timestamp: Long, // 添加时间戳参数
+    likedUsers: List<String>,
+    timestamp: Long,
     isMyPost: Boolean
 ) {
-    val key = postId
     val currentUserId = userViewModel.userId.value ?: ""
-    var liked by remember { mutableStateOf(likedUsers.contains(currentUserId)) } // 检查用户是否已经点赞
+    var liked by remember { mutableStateOf(likedUsers.contains(currentUserId)) }
     var currentLikes by remember { mutableStateOf(likes) }
     var showCommentsDialog by remember { mutableStateOf(false) }
     var currentComments by remember { mutableStateOf(comments) }
-    var showImageDialog by remember { mutableStateOf(false) } // 新增状态管理图片对话框
+    var showImageDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var editedContent by remember { mutableStateOf(content) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -282,6 +277,7 @@ fun PostItem(
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // Row for Author and Post options (edit, delete, report)
             Row {
                 Image(
                     painter = rememberImagePainter(authorImageUrl),
@@ -289,81 +285,71 @@ fun PostItem(
                     modifier = Modifier
                         .size(30.dp)
                         .clip(CircleShape)
+                        .border(1.5.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape)
                 )
                 Column(modifier = Modifier.padding(start = 8.dp)) {
                     Text(
                         text = authorName,
                         fontWeight = FontWeight.Bold
                     )
-                    // 显示时间戳
                     Text(
-                        text = userViewModel.formatTimestamp(timestamp), // 假设你有一个格式化时间戳的方法
+                        text = userViewModel.formatTimestamp(timestamp),
                         style = MaterialTheme.typography.body2,
-                        color = Color.Gray // 设置颜色为灰色
+                        color = Color.Gray
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                if (isMyPost){
-                    Box{
-                        // 三个点的图标
-                        IconButton(onClick = { showMenu = !showMenu }) {
-                            Icon(painter = painterResource(id = R.drawable.dot), contentDescription = "More Options",
-                                modifier = Modifier
-                                    .size(25.dp))
-                        }
-                        // 显示更多选项菜单
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                Box {
+                    IconButton(onClick = { showMenu = !showMenu }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.dot),
+                            contentDescription = "More Options",
+                            modifier = Modifier.size(25.dp)
+                        )
+                    }
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        if (isMyPost) {
                             DropdownMenuItem(onClick = {
-                                // 处理编辑
                                 showMenu = false
                                 showEditDialog = true
                             }) {
                                 Text("Edit")
                             }
                             DropdownMenuItem(onClick = {
-                                // 处理删除
                                 showMenu = false
-                                userViewModel.deletePost(postId) // 删除帖子
+                                userViewModel.deletePost(postId)
                             }) {
                                 Text("Delete")
+                            }
+                        } else {
+                            DropdownMenuItem(onClick = {
+                                showMenu = false
+                                showReportDialog = true
+                            }) {
+                                Text("Report")
                             }
                         }
                     }
                 }
-
             }
 
+            // Post content
             Text(text = content, modifier = Modifier.padding(vertical = 8.dp))
 
+            // Post Image (if available)
             imagePath?.let { imageUrl ->
-                // 使用 clickable 修饰符使图片可点击
                 Image(
                     painter = rememberImagePainter(data = imageUrl),
                     contentDescription = "Post image",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .clickable { showImageDialog = true }, // 点击时显示对话框
+                        .clickable { showImageDialog = true },
                     contentScale = ContentScale.Crop
                 )
             }
 
-            // 显示编辑对话框
-            if (showEditDialog) {
-                EditPostDialog(
-                    currentContent = editedContent,
-                    onDismiss = {
-                        showEditDialog = false
-                        editedContent = content
-                                },
-                    onConfirm = { newContent ->
-                        editedContent = newContent
-                        userViewModel.updatePost(postId, newContent) // 更新帖子内容
-                        showEditDialog = false
-                    }
-                )
-            }
-
+            // Like and comment buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Start
@@ -386,7 +372,8 @@ fun PostItem(
                         .padding(start = 4.dp)
                         .align(Alignment.CenterVertically)
                 )
-                Spacer(modifier = Modifier.weight(1f)) // 占据剩余空间
+
+                Spacer(modifier = Modifier.weight(1f))
 
                 IconButton(onClick = { showCommentsDialog = true }) {
                     Icon(
@@ -400,13 +387,13 @@ fun PostItem(
                     "$currentComments comments",
                     modifier = Modifier
                         .padding(start = 4.dp)
-                        .align(Alignment.CenterVertically) // 让文本垂直居中
+                        .align(Alignment.CenterVertically)
                 )
             }
         }
     }
 
-    // 显示图片对话框
+    // Image Dialog
     if (showImageDialog && imagePath != null) {
         ImageDialog(
             imageUrl = imagePath,
@@ -414,16 +401,91 @@ fun PostItem(
         )
     }
 
+    // Comments Dialog
     if (showCommentsDialog) {
         CommentsDialog(
             onDismiss = { showCommentsDialog = false },
             postId = postId,
             userViewModel = userViewModel,
-            currentUserName = userViewModel.userProfile.value?.name ?: "Anonymous", // 获取当前用户名
+            currentUserName = userViewModel.userProfile.value?.name ?: "Anonymous",
             onCommentAdded = {
-                currentComments++ // 每次添加评论时更新评论数量
+                currentComments++
             }
         )
+    }
+
+    // Edit Post Dialog
+    if (showEditDialog) {
+        EditPostDialog(
+            currentContent = editedContent,
+            onDismiss = {
+                showEditDialog = false
+                editedContent = content
+            },
+            onConfirm = { newContent ->
+                editedContent = newContent
+                userViewModel.updatePost(postId, newContent)
+                showEditDialog = false
+            }
+        )
+    }
+
+    // Report Post Dialog
+    if (showReportDialog) {
+        ReportDialog(
+            onDismiss = { showReportDialog = false },
+            onReport = { reason, reportedBy ->
+                userViewModel.reportPost(postId, reason, reportedBy) // 传递举报者 ID
+                showReportDialog = false
+            },
+            reportedBy = currentUserId // 传递当前用户 ID
+        )
+    }
+}
+
+
+@Composable
+fun ReportDialog(
+    onDismiss: () -> Unit,
+    onReport: (String, String) -> Unit, // 接收举报原因和举报者 ID
+    reportedBy: String // 新增参数：举报者 ID
+) {
+    var reportReason by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Report Post", style = MaterialTheme.typography.h6)
+                Spacer(modifier = Modifier.height(16.dp))
+                TextField(
+                    value = reportReason,
+                    onValueChange = { reportReason = it },
+                    label = { Text("Reason for reporting") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            onReport(reportReason, reportedBy) // 传递举报原因和举报者 ID
+                        },
+                        enabled = reportReason.isNotBlank()
+                    ) {
+                        Text("Submit Report")
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -22,6 +22,7 @@ import com.example.assignme.GUI.AccountProfile.AppFirstPage
 import com.example.assignme.GUI.AccountProfile.EditProfileScreen
 import com.example.assignme.GUI.AccountProfile.ForgotPasswordPage
 import com.example.assignme.GUI.AccountProfile.LoginPage
+import com.example.assignme.GUI.AccountProfile.ManageReportPostScreen
 import com.example.assignme.GUI.AccountProfile.ProfilePage
 import com.example.assignme.GUI.AccountProfile.RecipeApproveScreen
 import com.example.assignme.GUI.AccountProfile.RegisterPage
@@ -106,7 +107,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             AddAdmin(navController, userViewModel)
         }
         composable("chat") {
-            SocialAppUI(navController, userViewModel)
+            SocialAppUI(navController, userViewModel,themeViewModel)
         }
 
         composable("recipe_main_page") { backStackEntry ->
@@ -177,6 +178,10 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         }
         composable("tracker_page") {
             TrackerPage(navController, userViewModel)
+        }
+
+        composable("manageReportPost"){
+            ManageReportPostScreen(navController, userViewModel)
         }
     }
 
