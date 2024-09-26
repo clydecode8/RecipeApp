@@ -47,44 +47,73 @@ import com.example.assignme.ViewModel.UserViewModel
 @Composable
 fun SocialAppUI(navController: NavController, userViewModel: UserViewModel, themeViewModel: ThemeViewModel) {
     val windowInfo = rememberWidowInfo()
+    val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
+    val userName = userProfile.name ?: "User"
+    var selectedTab by remember { mutableStateOf(0) }
 
-        val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
-        val userName = userProfile.name ?: "User"
-        var selectedTab by remember { mutableStateOf(0) }
-
+    // 使用 MaterialTheme 来设置整体主题
+    MaterialTheme(
+        colors = if (themeViewModel.isDarkTheme.value) {
+            darkColors()
+        } else {
+            lightColors()
+        }
+    ) {
         Scaffold(
             topBar = { AppTopBar(title = "Welcome $userName,", navController = navController) },
-            bottomBar = { AppBottomNavigation(navController) }
+            bottomBar = { AppBottomNavigation(navController) },
+            // 在这里为 Scaffold 的内容添加背景颜色
+//            modifier = Modifier.background(MaterialTheme.colors.onSurface)
         ) { innerPadding ->
             when (windowInfo.screenWidthInfo) {
                 is WindowInfo.WindowType.Compact -> CompactLayout(
                     innerPadding = innerPadding,
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
-                    userViewModel = userViewModel
+                    userViewModel = userViewModel,
+                    themeViewModel = themeViewModel
                 )
                 is WindowInfo.WindowType.Medium -> MediumLayout(
                     innerPadding = innerPadding,
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
-                    userViewModel = userViewModel
+                    userViewModel = userViewModel,
+                    themeViewModel = themeViewModel
                 )
                 is WindowInfo.WindowType.Expanded -> ExpandedLayout(
                     innerPadding = innerPadding,
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
-                    userViewModel = userViewModel
+                    userViewModel = userViewModel,
+                    themeViewModel = themeViewModel
                 )
             }
         }
+    }
 }
 
 @Composable
-fun TabRowContent(selectedTab: Int, onTabSelected: (Int) -> Unit) {
+fun TabRowContent(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    themeViewModel: ThemeViewModel
+) {
+//    val backgroundColor = if (themeViewModel.isDarkTheme.value) {
+//        MaterialTheme.colors.surface // 深色主题使用默认的surface颜色
+//    } else {
+//        Color(0xFFE77575)
+//    }
+//
+//    val contentColor = if (themeViewModel.isDarkTheme.value) {
+//        MaterialTheme.colors.onSurface // 深色主题使用默认的onSurface颜色
+//    } else {
+//        Color.White
+//    }
+
     TabRow(
         selectedTabIndex = selectedTab,
-//        backgroundColor = Color.DarkGray,
-//        contentColor = Color.White,
+//        backgroundColor = backgroundColor,
+//        contentColor = contentColor,
         modifier = Modifier.height(50.dp)
     ) {
         Tab(
@@ -105,10 +134,13 @@ fun CompactLayout(
     innerPadding: PaddingValues,
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    userViewModel: UserViewModel
+    userViewModel: UserViewModel,
+    themeViewModel: ThemeViewModel
 ) {
-    Column(modifier = Modifier.padding(innerPadding)) {
-        TabRowContent(selectedTab, onTabSelected)
+    Column(modifier = Modifier.padding(innerPadding)
+//        .background(MaterialTheme.colors.background)
+    ) {
+        TabRowContent(selectedTab, onTabSelected,themeViewModel)
         PostComposer(userViewModel)
         if (selectedTab == 0) {
             PostList(userViewModel)
@@ -123,10 +155,11 @@ fun MediumLayout(
     innerPadding: PaddingValues,
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    userViewModel: UserViewModel
+    userViewModel: UserViewModel,
+    themeViewModel: ThemeViewModel
 ) {
     Column(modifier = Modifier.padding(innerPadding)) {
-        TabRowContent(selectedTab, onTabSelected)
+        TabRowContent(selectedTab, onTabSelected, themeViewModel)
         Row {
             Column(modifier = Modifier.weight(1f)) {
                 PostComposer(userViewModel)
@@ -148,10 +181,11 @@ fun ExpandedLayout(
     innerPadding: PaddingValues,
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    userViewModel: UserViewModel
+    userViewModel: UserViewModel,
+    themeViewModel: ThemeViewModel
 ) {
     Column(modifier = Modifier.padding(innerPadding)) {
-        TabRowContent(selectedTab, onTabSelected)
+        TabRowContent(selectedTab, onTabSelected,themeViewModel)
         Row {
             Column(modifier = Modifier.weight(1f)) {
                 PostComposer(userViewModel)
@@ -239,7 +273,13 @@ fun PostComposer(userViewModel: UserViewModel) {
                 }
             },
             enabled = postText.isNotEmpty(),
-            modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(top = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color(0xFFE23E3E),  // 设置背景颜色为红色
+                contentColor = Color.White    // 设置文本颜色为白色
+            )
         ) {
             Text("Post")
         }

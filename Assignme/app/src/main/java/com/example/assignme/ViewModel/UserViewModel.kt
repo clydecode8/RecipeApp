@@ -86,7 +86,7 @@ class UserViewModel : ViewModel(), UserProfileProvider {
         val db = FirebaseFirestore.getInstance()
         val currentUserId = _userId.value ?: return
 
-        // 获取当前帖子的点赞信息
+        // Fetch the post to update likes
         db.collection("posts").document(postId)
             .get()
             .addOnSuccessListener { document ->
@@ -96,32 +96,63 @@ class UserViewModel : ViewModel(), UserProfileProvider {
                         val isAlreadyLiked = post.likedUsers.contains(currentUserId)
 
                         if (liked && !isAlreadyLiked) {
-                            // 如果用户还没有点赞，则进行点赞
+                            // User likes the post
                             db.collection("posts").document(postId)
                                 .update(
-                                    "likes",
-                                    FieldValue.increment(1),
-                                    "likedUsers",
-                                    FieldValue.arrayUnion(currentUserId) // 添加用户到 likedUsers 列表
+                                    "likes", FieldValue.increment(1),
+                                    "likedUsers", FieldValue.arrayUnion(currentUserId)
                                 )
+                                .addOnSuccessListener {
+                                    fetchUpdatedPost(postId)
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.w("UserViewModel", "Error updating like", e)
+                                }
                         } else if (!liked && isAlreadyLiked) {
-                            // 如果用户已经点赞，则取消点赞
+                            // User unlikes the post
                             db.collection("posts").document(postId)
                                 .update(
-                                    "likes",
-                                    FieldValue.increment(-1),
-                                    "likedUsers",
-                                    FieldValue.arrayRemove(currentUserId) // 从 likedUsers 列表中移除用户
+                                    "likes", FieldValue.increment(-1),
+                                    "likedUsers", FieldValue.arrayRemove(currentUserId)
                                 )
+                                .addOnSuccessListener {
+                                    fetchUpdatedPost(postId)
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.w("UserViewModel", "Error updating unlike", e)
+                                }
                         } else {
-                            // Else case for completeness (no action needed)
-                            Log.d("UserViewModel", "No change in like status")
+                            // Optional else for cases when the state doesn't change
+                            Log.d("UserViewModel", "No changes to like state")
                         }
                     }
                 }
             }
             .addOnFailureListener { e ->
-                Log.w("UserViewModel", "Error updating likes", e)
+                Log.w("UserViewModel", "Error fetching post", e)
+            }
+    }
+
+
+
+    private fun fetchUpdatedPost(postId: String) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("posts").document(postId)
+            .get()
+            .addOnSuccessListener { document ->
+                val updatedPost = document.toObject(Post::class.java)?.copy(id = document.id)
+                if (updatedPost != null) {
+                    // Update _posts LiveData with the new post
+                    val currentPosts = _posts.value?.toMutableList() ?: mutableListOf()
+                    val postIndex = currentPosts.indexOfFirst { it.id == postId }
+                    if (postIndex != -1) {
+                        currentPosts[postIndex] = updatedPost
+                        _posts.value = currentPosts
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.w("UserViewModel", "Error fetching updated post", e)
             }
     }
 
@@ -132,25 +163,23 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             "userName" to comment.userName,
             "content" to comment.content,
             "timestamp" to comment.timestamp,
-            "userProfileImage" to comment.userProfileImage // 添加头像 URL
+            "userProfileImage" to comment.userProfileImage
         )
 
         db.collection("posts").document(postId).collection("comments")
             .add(commentData)
             .addOnSuccessListener {
                 Log.d("UserViewModel", "Comment added successfully")
-                updateCommentCount(postId) // 更新评论计数
+                updateCommentCount(postId)
             }
             .addOnFailureListener { e ->
                 Log.w("UserViewModel", "Error adding comment", e)
             }
     }
 
-
     private fun updateCommentCount(postId: String) {
         val db = FirebaseFirestore.getInstance()
 
-        // 获取当前评论数量
         db.collection("posts").document(postId)
             .get()
             .addOnSuccessListener { document ->
@@ -158,10 +187,10 @@ class UserViewModel : ViewModel(), UserProfileProvider {
                     val currentComments = document.getLong("comments")?.toInt() ?: 0
                     val newCommentsCount = currentComments + 1
 
-                    // 更新评论数量
                     db.collection("posts").document(postId)
                         .update("comments", newCommentsCount)
                         .addOnSuccessListener {
+                            fetchUpdatedPost(postId) // Update local data
                             Log.d("UserViewModel", "Comments count updated successfully")
                         }
                         .addOnFailureListener { e ->

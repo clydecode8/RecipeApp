@@ -31,11 +31,11 @@ import com.example.assignme.R
 fun AppBottomNavigation(navController: NavController) {
 
     val items = listOf(
-        BottomNavItem("Home", R.drawable.ic_home, "recipe_main_page"),
-        BottomNavItem("Calendar", R.drawable.ic_calendar, "schedule_page"),
-        BottomNavItem("Add", R.drawable.ic_add, "create_recipe", showBadge = true), // Set showBadge to true
-        BottomNavItem("Health", R.drawable.ic_health, "tracker_page"),
-        BottomNavItem("Chat", R.drawable.ic_chat, "chat")
+        BottomNavItem("Home", R.drawable.home, R.drawable.home_selected,"recipe_main_page"),
+        BottomNavItem("Calendar", R.drawable.calendar, R.drawable.calendar_selected,"schedule_page"),
+        BottomNavItem("Add", R.drawable.ic_add, R.drawable.ic_add,"create_recipe", showBadge = true), // Set showBadge to true
+        BottomNavItem("Health", R.drawable.heart, R.drawable.heart_selected,"tracker_page"),
+        BottomNavItem("Chat", R.drawable.chat, R.drawable.chat_selected,"chat")
     )
 
     Box(
@@ -60,8 +60,9 @@ fun AppBottomNavigation(navController: NavController) {
                                     .size(0.dp) // Prevent the "Add" item from taking space here
                             )
                         } else {
+                            val iconRes = if (currentRoute == item.route) item.selectedIconRes else item.iconRes
                             Icon(
-                                painter = painterResource(id = item.iconRes),
+                                painter = painterResource(id = iconRes),
                                 contentDescription = item.title,
                                 modifier = Modifier.size(24.dp),
                                 tint = Color.Unspecified // Use Unspecified to avoid tint affecting the icon
