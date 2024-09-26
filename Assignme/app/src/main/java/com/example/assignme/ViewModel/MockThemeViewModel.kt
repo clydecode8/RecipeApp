@@ -4,12 +4,14 @@ package com.example.assignme.ViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 
-class MockThemeViewModel : ThemeViewModel() {
+class MockThemeViewModel : ThemeViewModel(MockThemePreference()) {
 
     init {
         // Initialize with a default theme
         isDarkTheme.value = false // Light theme
     }
 }
+
+
 
 

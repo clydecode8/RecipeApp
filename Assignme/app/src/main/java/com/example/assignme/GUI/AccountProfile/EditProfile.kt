@@ -538,10 +538,11 @@ fun ErrorDialog(onDismiss: () -> Unit) {
 @Composable
 fun PreviewEditProfileScreen() {
 
+    val mockThemeViewModel = MockThemeViewModel()
     EditProfileScreen(
         navController = rememberNavController(),
         userViewModel = MockUserViewModel(),
-        themeViewModel = MockThemeViewModel()
+        themeViewModel = mockThemeViewModel
     )
 }
 

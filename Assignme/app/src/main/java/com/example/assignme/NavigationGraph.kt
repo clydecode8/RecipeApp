@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -47,7 +48,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
 
     NavHost(
         navController = navController,
-        startDestination = "main_page"
+        startDestination = "main_page",
     ){
 
         composable("main_page"){

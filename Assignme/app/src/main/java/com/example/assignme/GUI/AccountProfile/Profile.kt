@@ -40,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +70,7 @@ fun ProfilePage(navController: NavController,
                 userViewModel: UserProfileProvider,
                 themeViewModel: ThemeViewModel) {
 
+    val currentTheme by rememberUpdatedState(themeViewModel.isDarkTheme.value)
     var showDialog by remember { mutableStateOf(false) }
     // Sample data
     val recipes = listOf(
@@ -125,6 +127,7 @@ fun ProfilePage(navController: NavController,
                         onDismiss = { showDialog = false },
                         onThemeSelected = { selectedTheme ->
                             themeViewModel.isDarkTheme.value = (selectedTheme == "Dark")
+                            themeViewModel.toggleTheme() // Update the theme preference
                             showDialog = false // Dismiss the dialog after selection
                         }
                     )
@@ -203,10 +206,10 @@ fun ThemeSelectionDialog(
             title = { Text(text = "Select Theme") },
             text = {
                 Column {
-                    TextButton(onClick = { onThemeSelected("Light") }) {
+                    TextButton(onClick = { onThemeSelected("Dark") }) {
                         Text(text = "Light Theme")
                     }
-                    TextButton(onClick = { onThemeSelected("Dark") }) {
+                    TextButton(onClick = { onThemeSelected("Light") }) {
                         Text(text = "Dark Theme")
                     }
                 }
