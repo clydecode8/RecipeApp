@@ -239,7 +239,13 @@ fun PostComposer(userViewModel: UserViewModel) {
                 }
             },
             enabled = postText.isNotEmpty(),
-            modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(top = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color(0xFFE23E3E),  // 设置背景颜色为红色
+                contentColor = Color.White    // 设置文本颜色为白色
+            )
         ) {
             Text("Post")
         }
