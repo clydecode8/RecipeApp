@@ -119,7 +119,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             AddAdmin(navController, userViewModel)
         }
         composable("chat") {
-            SocialAppUI(navController, userViewModel,themeViewModel)
+            SocialAppUI(navController, userViewModel)
         }
 
         composable("recipe_main_page") { backStackEntry ->
