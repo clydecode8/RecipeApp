@@ -98,22 +98,17 @@ fun TabRowContent(
     onTabSelected: (Int) -> Unit,
     themeViewModel: ThemeViewModel
 ) {
-//    val backgroundColor = if (themeViewModel.isDarkTheme.value) {
-//        MaterialTheme.colors.surface // 深色主题使用默认的surface颜色
-//    } else {
-//        Color(0xFFE77575)
-//    }
-//
-//    val contentColor = if (themeViewModel.isDarkTheme.value) {
-//        MaterialTheme.colors.onSurface // 深色主题使用默认的onSurface颜色
-//    } else {
-//        Color.White
-//    }
+    val backgroundColor = if (themeViewModel.isDarkTheme.value) {
+        MaterialTheme.colors.surface // 深色主题使用默认的surface颜色
+    } else {
+        Color(0xFFF8F8F8)
+    }
+
 
     TabRow(
         selectedTabIndex = selectedTab,
-//        backgroundColor = backgroundColor,
-//        contentColor = contentColor,
+        backgroundColor = backgroundColor,
+        contentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.height(50.dp)
     ) {
         Tab(
@@ -236,7 +231,14 @@ fun PostComposer(userViewModel: UserViewModel) {
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 8.dp),
-                placeholder = { Text("What's on your mind?") }
+                placeholder = { Text("What's on your mind?") },
+                colors = TextFieldDefaults.textFieldColors(
+                    textColor = MaterialTheme.colors.onSurface,
+                    cursorColor = Color(0xFFE23E3E),
+                    focusedIndicatorColor = Color(0xFFE23E3E),
+                    unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
+                    placeholderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+                )
             )
 
             IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
