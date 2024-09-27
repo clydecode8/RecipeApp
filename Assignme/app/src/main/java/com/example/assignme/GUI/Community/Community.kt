@@ -270,8 +270,10 @@ fun PostComposer(userViewModel: UserViewModel) {
                 .align(Alignment.End)
                 .padding(top = 8.dp),
             colors = ButtonDefaults.buttonColors(
-                backgroundColor = Color(0xFFE23E3E),
-                contentColor = Color.White// 设置背景颜色为红色
+                backgroundColor = Color(0xFFE23E3E), // 按钮背景颜色
+                disabledBackgroundColor = Color(0xFFEA5959), // 按钮禁用时的背景颜色
+                contentColor = Color.White, // 按钮文本颜色
+                disabledContentColor = Color.White.copy(alpha = 0.7f) // 按钮禁用时的文本颜色
             )
         ) {
             Text("Post")
@@ -511,7 +513,13 @@ fun ReportDialog(
                         onClick = {
                             onReport(reportReason, reportedBy) // 传递举报原因和举报者 ID
                         },
-                        enabled = reportReason.isNotBlank()
+                        enabled = reportReason.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = Color(0xFFE23E3E), // 按钮背景颜色
+                            disabledBackgroundColor = Color(0xFFEA5959), // 按钮禁用时的背景颜色
+                            contentColor = Color.White, // 按钮文本颜色
+                            disabledContentColor = Color.White.copy(alpha = 0.7f) // 按钮禁用时的文本颜色
+                        )
                     ) {
                         Text("Submit Report")
                     }
@@ -685,7 +693,11 @@ fun CommentsDialog(
                             userViewModel.addComment(postId, newComment)
                             onCommentAdded()
                             commentText = ""
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = Color(0xFFE23E3E),
+                            contentColor = Color.White// 设置背景颜色为红色
+                        )
                     ) {
                         Text("Send")
                     }
