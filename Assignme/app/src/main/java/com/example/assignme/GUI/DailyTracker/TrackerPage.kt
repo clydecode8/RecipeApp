@@ -1,5 +1,6 @@
 package com.example.assignme.GUI.DailyTracker
 
+import android.content.ContentValues.TAG
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -43,8 +44,12 @@ import com.patrykandpatrick.vico.compose.component.lineComponent
 import com.patrykandpatrick.vico.compose.component.textComponent
 import com.patrykandpatrick.vico.core.chart.column.ColumnChart
 import com.patrykandpatrick.vico.core.chart.line.LineChart
+import com.patrykandpatrick.vico.core.component.shape.LineComponent
 import com.patrykandpatrick.vico.core.component.text.VerticalPosition
+import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
+import com.patrykandpatrick.vico.core.entry.FloatEntry
 import com.patrykandpatrick.vico.core.formatter.DecimalFormatValueFormatter
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -55,6 +60,7 @@ fun TrackerPage(
 ) {
     val userId by userViewModel.userId.observeAsState()
     val currentWaterIntake by trackerViewModel.currentWaterIntake.observeAsState(0)
+    val currentDate = LocalDate.now()
 
     LaunchedEffect(userId) {
         userId?.let { id ->
@@ -64,6 +70,9 @@ fun TrackerPage(
                 }
             }
         }
+    }
+    LaunchedEffect(currentDate) {
+        trackerViewModel.fetchWaterIntakeForDate(currentDate) // Fetch water intake for today
     }
 
     var weight by remember { mutableStateOf("0") }
@@ -85,14 +94,12 @@ fun TrackerPage(
             weightUpdateMessage = ""
         }
     }
-
     LaunchedEffect(calorieAddMessage) {
         if (calorieAddMessage.isNotEmpty()) {
             Toast.makeText(context, calorieAddMessage, Toast.LENGTH_SHORT).show()
             calorieAddMessage = ""
         }
     }
-
     LaunchedEffect(waterIntakeMessage) {
         if (waterIntakeMessage.isNotEmpty()) {
             Toast.makeText(context, waterIntakeMessage, Toast.LENGTH_SHORT).show()
@@ -114,9 +121,14 @@ fun TrackerPage(
             // Weight Section
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                        colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF969696),  // Light blue background
+                        contentColor = Color.Black           // Content (text, icons) color
+                    )
+                )  {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
@@ -146,7 +158,7 @@ fun TrackerPage(
                             Box(
                                 modifier = Modifier
                                     .padding(start = 16.dp)
-                                    .size(height = 100.dp, width = 150.dp)
+                                    .size(height = 100.dp, width = 200.dp)
                             ) {
                                 WeightChart(weightHistory)
                             }
@@ -170,7 +182,6 @@ fun TrackerPage(
                             Button(
                                 onClick = {
                                     if (weight.isNotEmpty()) {
-                                        val currentDate = LocalDate.now()
                                         trackerViewModel.updateWeight(currentDate, weight.toFloat())
                                         weightUpdateMessage = "Successfully updated weight to $weight kg."
                                     }
@@ -189,7 +200,6 @@ fun TrackerPage(
                 WaterIntakeSection(
                     currentWaterIntake = currentWaterIntake,
                     onAddWaterClick = {
-                        val currentDate = LocalDate.now()
                         trackerViewModel.addWaterIntake(currentDate)
                         waterIntakeMessage = "Water intake updated."
                     }
@@ -199,8 +209,13 @@ fun TrackerPage(
             // Calories Section
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                        colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF969696),  // Light blue background
+                        contentColor = Color.Black           // Content (text, icons) color
+                    )
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
@@ -232,7 +247,7 @@ fun TrackerPage(
                             Box(
                                 modifier = Modifier
                                     .padding(start = 16.dp)
-                                    .size(height = 100.dp, width = 150.dp)
+                                    .size(height = 100.dp, width = 200.dp)
                             ) {
                                 CaloriesChart(calorieHistory)
                             }
@@ -256,7 +271,6 @@ fun TrackerPage(
                             Button(
                                 onClick = {
                                     if (calories > 0) {
-                                        val currentDate = LocalDate.now()
                                         trackerViewModel.addCalories(currentDate, calories.toFloat())
                                         calorieAddMessage = "Successfully added $calories kcal."
                                     }
@@ -270,19 +284,38 @@ fun TrackerPage(
                 }
             }
 
-            // Daily Analysis Button
+            // Daily Analysis and Body Comparison Buttons Row
             item {
-                Button(
-                    onClick = {
-                        navController.navigate("daily_analysis")
-                    },
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp)
-                        .padding(bottom = 16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Use the colors parameter
+                        .padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween, // Space buttons to opposite ends
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Daily Analysis")
+                    Button(
+                        onClick = {
+                            navController.navigate("transformation_page")
+                            Log.d(TAG, "Body Comparison button clicked")
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Change color as needed
+                    ) {
+                        Text("Transformations", color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp)) // Optional spacing between buttons
+
+                    // Daily Analysis Button
+                    Button(
+                        onClick = {
+                            navController.navigate("daily_analysis")
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Use the colors parameter
+                    ) {
+                        Text("Daily Analysis", color = Color.White)
+                    }
                 }
             }
         }
@@ -295,7 +328,13 @@ fun WaterIntakeSection(
     onAddWaterClick: () -> Unit // Keep this as a normal function
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF969696),  // Light blue background
+            contentColor = Color.Black           // Content (text, icons) color
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Title Row
@@ -320,7 +359,7 @@ fun WaterIntakeSection(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WeightChart(weightHistory: List<TrackerRecord>, lineColor: Color = Color.Blue) {
-    // Get the current month and fill missing days with default weights (e.g., 0f or null)
+    // Get the current YearMonth and number of days in the current month
     val currentMonth = YearMonth.now()
     val daysInMonth = currentMonth.lengthOfMonth()
 
@@ -332,29 +371,30 @@ fun WeightChart(weightHistory: List<TrackerRecord>, lineColor: Color = Color.Blu
         day.toFloat() to (weightByDay[day] ?: 0f) // x-axis is day, y-axis is weight
     }
 
-    // Log the filled weight data
+    // Log the filled weight data for debugging
     Log.d("WeightChart", "Entries: ${filledWeightData.size}, Data: $filledWeightData")
 
     // Create the entry model with the filled data
     val chartEntryModel = entryModelOf(*filledWeightData.toTypedArray())
 
-    // Define the line specification with custom color
+    // Define the line specification with the given line color
     val lineSpec = LineChart.LineSpec(
         lineColor = lineColor.toArgb() // Convert Color to Int if needed
     )
 
+    // Render the line chart with the start and bottom axes
     Chart(
         chart = lineChart(
-            lines = listOf(lineSpec) // Pass the list of line specifications
+            lines = listOf(lineSpec) // Pass the line specification
         ),
         model = chartEntryModel,
         startAxis = startAxis(
-            title = "Weight (kg)", // y-axis: weight
-            valueFormatter = { value, _ -> value.toString() }
+            title = "Weight (kg)", // Y-axis: Weight
+            valueFormatter = { value, _ -> value.toString() } // Format Y-axis values
         ),
         bottomAxis = bottomAxis(
-            title = "Day of Month", // x-axis: day of month (date)
-            valueFormatter = { value, _ -> value.toInt().toString() }
+            title = "Day of Month", // X-axis: Day of month
+            valueFormatter = { value, _ -> value.toInt().toString() } // Format X-axis values
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -376,17 +416,15 @@ fun CaloriesChart(calorieHistory: List<TrackerRecord>) {
 
     // Define the line components for the columns
     val lineComponent = lineComponent(
-        color = Color.Gray // Customize your color here
+        color = Color.Blue // Customize your color here
     )
-
     // Create the ColumnChart with smaller bar widths
     val columnChart = ColumnChart(
         columns = listOf(lineComponent),
-        spacingDp = 4f, // Reduce distance between neighboring column collections
-        innerSpacingDp = 4f, // Reduce distance between grouped columns
+        spacingDp = 1f, // Reduce distance between neighboring column collections
+        innerSpacingDp = 2f, // Reduce distance between grouped columns
         mergeMode = ColumnChart.MergeMode.Grouped
     )
-
     // Render the chart with customized axes
     Chart(
         chart = columnChart,

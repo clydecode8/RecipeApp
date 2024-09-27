@@ -26,9 +26,8 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
     private val _latestEntry = MutableLiveData<TrackerRecord?>()
     val latestEntry: LiveData<TrackerRecord?> get() = _latestEntry
 
-    // New LiveData to hold the current water intake
-    private val _currentWaterIntake = MutableLiveData<Int>()
-    val currentWaterIntake: LiveData<Int> get() = _currentWaterIntake
+    private val _currentWaterIntake = MutableLiveData<Int>(0)
+    val currentWaterIntake: LiveData<Int> = _currentWaterIntake
 
     private val _weightHistory = MutableLiveData<List<TrackerRecord>>(emptyList())
     val weightHistory: LiveData<List<TrackerRecord>> = _weightHistory
@@ -111,6 +110,18 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
             } else {
                 repository.insertOrUpdate(TrackerRecord(date, caloriesIntake = calories))
                 fetchAllEntries() // Update histories after adding new record
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun fetchWaterIntakeForDate(date: LocalDate) {
+        viewModelScope.launch {
+            val record = repository.getEntryByDate(date)
+            if (record != null) {
+                _currentWaterIntake.postValue(record.waterIntake)
+            } else {
+                _currentWaterIntake.postValue(0) // Default to 0 if no record exists for today
             }
         }
     }

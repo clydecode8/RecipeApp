@@ -36,6 +36,7 @@ import com.example.assignme.GUI.Community.SocialAppUI
 import com.example.assignme.GUI.DailyTracker.DailyAnalysis
 import com.example.assignme.GUI.DailyTracker.SetUpInfo
 import com.example.assignme.GUI.DailyTracker.TrackerPage
+import com.example.assignme.GUI.DailyTracker.Transformation
 import com.example.assignme.GUI.FirstPage
 import com.example.assignme.GUI.Recipe.CreateRecipe
 import com.example.assignme.GUI.Recipe.MyRecipe
@@ -199,6 +200,11 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         composable("tracker_page") {
             val trackerViewModel: TrackerViewModel = hiltViewModel()
             TrackerPage(navController, userViewModel, trackerViewModel)
+        }
+
+        composable("transformation_page") {
+            val trackerViewModel: TrackerViewModel = hiltViewModel()
+            Transformation(navController, userViewModel, trackerViewModel)
         }
 
         composable("manageReportPost"){

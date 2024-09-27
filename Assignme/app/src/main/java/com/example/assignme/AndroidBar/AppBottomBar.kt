@@ -34,7 +34,7 @@ fun AppBottomNavigation(navController: NavController) {
         BottomNavItem("Home", R.drawable.home, R.drawable.home_selected,"recipe_main_page"),
         BottomNavItem("Calendar", R.drawable.calendar, R.drawable.calendar_selected,"schedule_page"),
         BottomNavItem("Add", R.drawable.ic_add, R.drawable.ic_add,"create_recipe", showBadge = true), // Set showBadge to true
-        BottomNavItem("Health", R.drawable.heart, R.drawable.heart_selected,"tracker_page"),
+        BottomNavItem("Health", R.drawable.heart, R.drawable.heart_selected,"tracker_page"), // daily_analysis tracker_page
         BottomNavItem("Chat", R.drawable.chat, R.drawable.chat_selected,"chat")
     )
 
