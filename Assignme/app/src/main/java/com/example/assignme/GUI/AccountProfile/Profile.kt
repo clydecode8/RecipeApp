@@ -1,5 +1,6 @@
 package com.example.assignme.GUI.AccountProfile
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -239,11 +240,14 @@ fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvid
 
         // Observe user profile data
         val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
+        Log.d("ProfileSection", "Current User ID: $userId")
+        Log.d("ProfileSection", "User Profile: Name: ${userProfile.name}, Profile Picture URL: ${userProfile.profilePictureUrl}")
 
         // Retrieve and use user data
         userId?.let {
             // Fetch profile data based on userId if not already fetched
             if (userProfile.name == null) {
+
                 userViewModel.fetchUserProfile(it)
             }
 

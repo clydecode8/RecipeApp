@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
@@ -59,7 +60,11 @@ import com.example.assignme.ViewModel.UserProfileProvider
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
+import java.io.Console
 import kotlin.math.sign
 
 
@@ -70,6 +75,7 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
     var showErrorDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
@@ -157,107 +163,125 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
             .safeContentPadding()
             .statusBarsPadding()
     ) {
-
         // Define variables to hold screen width and height
         val screenHeight = constraints.maxHeight
 
-        Row(
+        LazyColumn(
             modifier = Modifier
-                .padding(start = 15.dp, top = 50.dp)
-                .fillMaxWidth()
-                .statusBarsPadding(),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top
+                .fillMaxSize()
+                .padding(start = 15.dp, end = 15.dp, top = 50.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back_arrow),
-                contentDescription = "Back",
-                modifier = Modifier
-                    .size(30.dp)
-                    .clickable {
-                        // Navigate back
-                        navController.navigateUp()
-                    }
-            )
-        }
-
-        Column(
-            modifier = Modifier
-                .padding(start = 20.dp, top = 100.dp, end = 20.dp)
-                .fillMaxHeight()
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top
-        ) {
-            // Texts
-            Text(
-                text = "Welcome back! Glad to see you, again!",
-                fontSize = 30.sp,
-                lineHeight = 36.sp, // Adjust lineHeight to increase spacing between lines
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(end = 15.dp),
-            )
-
-            Spacer(modifier = Modifier.height(20.dp)) // Space between texts and text fields
-
-            // Text Fields
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .padding(end = 15.dp, top = 20.dp) // Reduced top padding
-            ) {
-                TextField(
-                    value = email,
-                    onValueChange = { newText -> email = newText },
-                    placeholder = { Text(text = "Enter your email") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 18.dp)
-                )
-
-                TextField(
-                    value = password,
-                    onValueChange = { newText -> password = newText },
-                    placeholder = { Text(text = "Enter your password") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 18.dp)
-                )
-
-                // Forgot Password text
+            // Back arrow
+            item {
                 Row(
                     modifier = Modifier
-                        .align(Alignment.End)
-                        .padding(top = 8.dp)
+                        .fillMaxWidth()
+                        .statusBarsPadding(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.back_arrow),
+                        contentDescription = "Back",
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clickable {
+                                // Navigate back
+                                navController.navigateUp()
+                            }
+                    )
+                }
+            }
+
+            // Welcome text
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 20.dp),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Top
                 ) {
                     Text(
-                        text = "Forgot Password?",
-                        modifier = Modifier.clickable {
-                            // Navigate to ForgotPassword screen
-                            navController.navigate("forgot_password_page")
-                        }
+                        text = "Welcome back! Glad to see you, again!",
+                        fontSize = 30.sp,
+                        lineHeight = 36.sp, // Adjust lineHeight to increase spacing between lines
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(end = 15.dp),
                     )
                 }
 
-                Spacer(modifier = Modifier.height((screenHeight * 0.03f).dp)) // Pushes the button to the bottom
+                Spacer(modifier = Modifier.height(20.dp)) // Space between texts and text fields
+            }
 
-                // Login Button
+            // Text Fields
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 15.dp, top = 20.dp) // Reduced top padding
+                ) {
+                    TextField(
+                        value = email,
+                        onValueChange = { newText -> email = newText },
+                        placeholder = { Text(text = "Enter your email") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 18.dp)
+                    )
+
+                    TextField(
+                        value = password,
+                        onValueChange = { newText -> password = newText },
+                        placeholder = { Text(text = "Enter your password") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 18.dp)
+                    )
+
+                    // Forgot Password text
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(top = 8.dp)
+                    ) {
+                        Text(
+                            text = "Forgot Password?",
+                            modifier = Modifier.clickable {
+                                // Navigate to ForgotPassword screen
+                                navController.navigate("forgot_password_page")
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height((screenHeight * 0.03f).dp)) // Pushes the button to the bottom
+                }
+            }
+
+            // Login Button
+            item {
                 Button(
                     onClick = {
                         // Call login function
-                        login(auth, email, password, navController,
+                        login(
+                            auth, db, email, password, navController,
                             onError = {
-                            // On error, show error dialog
-                            errorMessage = it
-                            showErrorDialog = true
-                        },
+                                // On error, show error dialog
+                                errorMessage = it
+                                showErrorDialog = true
+                            },
+
                             onSuccess = { result ->
-                            signInResult = result
-                            // Safely access signInResult
-                            signInResult?.data?.userId?.let { userId ->
-                                println("Sign-in successful: $userId")
-                            }// On success, show success dialog
-                            showSuccessDialog = true
-                        })
+                                signInResult = result
+                                // Safely access signInResult
+                                signInResult?.data?.userId?.let { userId ->
+                                    println("Sign-in successful: $userId")
+                                } // On success, show success dialog
+                                showSuccessDialog = true
+                            }
+                        )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -270,8 +294,10 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                 }
 
                 Spacer(modifier = Modifier.height(16.dp)) // Space below the button
+            }
 
-                // Divider section with "or login with"
+            // Divider section with "or login with"
+            item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -293,12 +319,14 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                 }
 
                 Spacer(modifier = Modifier.height(16.dp)) // Space below the divider
+            }
 
-                // Google Icon Button
+            // Google Icon Button
+            item {
                 Button(
                     onClick = { signInGoogle() },
                     modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
+
                         .height(54.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8ECF4)),
                     shape = RoundedCornerShape(10.dp)
@@ -312,12 +340,13 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                 }
 
                 Spacer(modifier = Modifier.height(24.dp)) // Space below the Google button
+            }
 
-                // Registration Text
+            // Registration Text
+            item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
-
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
@@ -337,6 +366,8 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
             }
         }
     }
+
+
 
     // Success AlertDialog
     if (showSuccessDialog) {
@@ -378,34 +409,36 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
 
 //Firebase
 fun handleSignInResult2(result: SignInResult, navController: NavController, userViewModel: UserProfileProvider) {
-    // Assuming you have the userId from the result
+
     result.data?.userId?.let {
         userViewModel.setUserId(it)
-        Log.d("LoginPage", "Setting user ID: ${userViewModel.userId.value}")
+        val userType = result.data?.userType
 
-        if(userViewModel.userId.value == "JOVQ9eF5fcQ5BkXgcQBa0SBF8Ct1"){
-            navController.navigate("admin_page") {
-                popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
+
+        when (userType) {
+            "admin" -> {
+                // Navigate to admin dashboard
+                navController.navigate("admin_page") {
+                    popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
+                }
             }
-
-        }else{
-            navController.navigate("profile_page") {
-                popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
+            "normal" -> {
+                // Navigate to normal user home screen
+                navController.navigate("profile_page") {
+                    popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
+                }
             }
-
+            else -> {
+                // Fallback, if the user type is unknown or not set
+                navController.navigate("main_page")
+            }
         }
-
-
     }
-
-    // Navigate to the next screen
-
 }
 
-
-// Firebase login function
 fun login(
     auth: FirebaseAuth,
+    db: FirebaseFirestore,
     email: String,
     password: String,
     navController: NavController,
@@ -414,29 +447,177 @@ fun login(
 ) {
     if (email.isNotEmpty() && password.isNotEmpty()) {
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            onError("Email is badly formatted")
+            onError("Email format is incorrect.")
             return
         }
 
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    // Login successful
-                    val user = task.result?.user
-                    val isNewUser = task.result?.additionalUserInfo?.isNewUser ?: false
-                    val signInResult = mapAuthResultToSignInResult(user, isNewUser)
-                    onSuccess(signInResult)
-                } else {
-                    // Login failed, show error
-                    val error = task.exception?.localizedMessage ?: "Login failed"
-                    onError(error)
+        // Check password length before proceeding
+        if (password.length < 6) {
+            onError("Password must be at least 6 characters long.")
+            return
+        }
+
+        // Check if the account is locked
+        isAccountLocked(email) { isLocked ->
+            if (isLocked) {
+                // Get the remaining lock time dynamically
+                calculateRemainingLockTime(email) { remainingMinutes ->
+                    onError("Your account is locked due to multiple failed attempts. Please try again in $remainingMinutes minutes.")
                 }
+            } else {
+                // Proceed with sign in
+                auth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val user = task.result?.user
+                            if (user != null) {
+                                val userId = user.uid
+                                val isNewUser = task.result?.additionalUserInfo?.isNewUser ?: false
+
+                                // Check if the email exists in the "admin" collection
+                                db.collection("admin")
+                                    .whereEqualTo("email", email)
+                                    .get()
+                                    .addOnSuccessListener { adminResult ->
+                                        val userType = if (!adminResult.isEmpty) {
+                                            "admin"
+                                        } else {
+                                            "normal"
+                                        }
+
+                                        // Create the sign-in result
+                                        val signInResult = mapAuthResultToSignInResult(user, isNewUser).apply {
+                                            data?.userType = userType
+                                        }
+
+                                        // Log user data for debugging
+                                        signInResult.data?.let { userData ->
+                                            Log.d("SignInResult", "User ID: ${userData.userId}")
+                                            Log.d("SignInResult", "Username: ${userData.username}")
+                                            Log.d("SignInResult", "Profile Picture URL: ${userData.profilePictureUrl}")
+                                            Log.d("SignInResult", "Is New User: ${signInResult.isNewUser}")
+                                            Log.d("SignInResult", "Error Message: ${signInResult.errorMessage}")
+                                        }
+
+                                        // Reset failed login attempts on successful login
+                                        resetLoginAttempts(email)
+
+                                        // Proceed with success callback
+                                        onSuccess(signInResult)
+                                    }
+                                    .addOnFailureListener { exception ->
+                                        onError("Failed to fetch user data: ${exception.localizedMessage}")
+                                    }
+                            } else {
+                                onError("User not found")
+                            }
+                        } else {
+                            // Call updateFailedLoginAttempt with a callback
+                            updateFailedLoginAttempt(email) { attemptsLeft ->
+                                val error = "Wrong login information. You have $attemptsLeft attempts left."
+                                if (attemptsLeft <= 0) {
+                                    // If locked, get the remaining lock time
+                                    calculateRemainingLockTime(email) { remainingMinutes ->
+                                        onError("Your account has been locked due to too many failed attempts. Please try again in $remainingMinutes minutes.")
+                                    }
+                                } else {
+                                    onError(error)
+                                }
+                            }
+                        }
+                    }
             }
+        }
     } else {
         onError("Please enter email and password")
     }
 }
 
+fun isAccountLocked(email: String, callback: (Boolean) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("loginAttempts").document(email).get()
+        .addOnSuccessListener { document ->
+            if (document.exists()) {
+                val lastAttemptTime = document.getLong("lastAttemptTime") ?: 0
+                val attemptCount = document.getLong("attemptCount") ?: 0
+                val currentTime = System.currentTimeMillis()
+
+                // Check if attempts are over the limit and within lockout period
+                callback(attemptCount >= 3 && currentTime - lastAttemptTime < 15 * 60 * 1000)
+            } else {
+                // If the document does not exist, the account is not locked
+                callback(false)
+            }
+        }
+        .addOnFailureListener { exception ->
+            Log.e("LoginCheck", "Failed to check if account is locked: ${exception.localizedMessage}")
+            callback(false) // Assume not locked in case of failure
+        }
+}
+
+fun resetLoginAttempts(email: String) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("loginAttempts").document(email)
+        .set(hashMapOf("attemptCount" to 0), SetOptions.merge())
+        .addOnSuccessListener {
+            Log.d("LoginAttempts", "Reset login attempts for $email")
+        }
+        .addOnFailureListener { exception ->
+            Log.e("LoginAttempts", "Failed to reset login attempts: ${exception.localizedMessage}")
+        }
+}
+
+fun updateFailedLoginAttempt(email: String, callback: (Int) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+    val updates = hashMapOf(
+        "attemptCount" to FieldValue.increment(1),
+        "lastAttemptTime" to System.currentTimeMillis()
+    )
+
+    db.collection("loginAttempts").document(email)
+        .set(updates, SetOptions.merge())
+        .addOnSuccessListener {
+            Log.d("LoginAttempts", "Updated login attempts for $email")
+            // Now, retrieve the updated attempt count
+            db.collection("loginAttempts").document(email).get()
+                .addOnSuccessListener { document ->
+                    val attemptCount = document.getLong("attemptCount")?.toInt() ?: 0
+                    // Calculate remaining attempts (7 is the limit)
+                    val remainingAttempts = maxOf(0, 7 - attemptCount)
+                    callback(remainingAttempts) // Call the callback with the number of attempts left
+                }
+        }
+        .addOnFailureListener { exception ->
+            Log.e("LoginAttempts", "Failed to update login attempts: ${exception.localizedMessage}")
+            callback(7) // In case of failure, assume all attempts are available
+        }
+}
+
+// Calculate remaining lock time
+fun calculateRemainingLockTime(email: String, callback: (Int) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+
+    db.collection("loginAttempts").document(email).get()
+        .addOnSuccessListener { document ->
+            if (document.exists()) {
+                val lastAttemptTime = document.getLong("lastAttemptTime") ?: 0
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastAttemptTime < 15 * 60 * 1000) {
+                    val lockDuration = 15 * 60 * 1000 // 15 minutes in milliseconds
+                    val remainingTime = ((lastAttemptTime + lockDuration - currentTime) / (1000 * 60)).toInt()
+                    callback(remainingTime) // Call the callback with the remaining time
+                } else {
+                    callback(0) // Not locked, no remaining time
+                }
+            } else {
+                callback(0) // If document does not exist, not locked
+            }
+        }
+        .addOnFailureListener { exception ->
+            Log.e("LoginCheck", "Failed to calculate remaining lock time: ${exception.localizedMessage}")
+            callback(0) // In case of failure, assume not locked
+        }
+}
 
 // Function to convert Firebase AuthResult to your SignInResult
 fun mapAuthResultToSignInResult(user: FirebaseUser?, isNewUser: Boolean): SignInResult {
@@ -447,11 +628,14 @@ fun mapAuthResultToSignInResult(user: FirebaseUser?, isNewUser: Boolean): SignIn
                 username = it.displayName,
                 profilePictureUrl = it.photoUrl?.toString()
             )
+
         },
         errorMessage = null,
         isNewUser = isNewUser
+
     )
 }
+
 
 @Preview(showBackground = true)
 @Composable

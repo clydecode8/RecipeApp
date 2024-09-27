@@ -23,6 +23,7 @@ import com.example.assignme.DataClass.Recipes
 import com.example.assignme.GUI.AccountProfile.AddAdmin
 import com.example.assignme.GUI.AccountProfile.AdminDashboard
 import com.example.assignme.GUI.AccountProfile.AppFirstPage
+import com.example.assignme.GUI.AccountProfile.EditAdminProfileScreen
 import com.example.assignme.GUI.AccountProfile.EditProfileScreen
 import com.example.assignme.GUI.AccountProfile.ForgotPasswordPage
 import com.example.assignme.GUI.AccountProfile.LoginPage
@@ -62,6 +63,10 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
 
             AppFirstPage(navController, userViewModel)
         }
+        composable("editadmin"){
+
+            EditAdminProfileScreen(navController, userViewModel, themeViewModel)
+        }
 
         composable("first_page"){
 
@@ -95,7 +100,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
 
         composable("admin_page"){
 
-            AdminDashboard(navController, userViewModel)
+            AdminDashboard(userViewModel, navController, themeViewModel)
         }
 
         composable("approve_recipe"){

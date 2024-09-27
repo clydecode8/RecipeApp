@@ -30,15 +30,11 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
     private val _currentWaterIntake = MutableLiveData<Int>()
     val currentWaterIntake: LiveData<Int> get() = _currentWaterIntake
 
-    // New LiveData for weight and calorie histories
-    private val _weightHistory = MutableLiveData<List<TrackerRecord>>()
-    val weightHistory: LiveData<List<TrackerRecord>> get() = _weightHistory
+    private val _weightHistory = MutableLiveData<List<TrackerRecord>>(emptyList())
+    val weightHistory: LiveData<List<TrackerRecord>> = _weightHistory
 
     private val _calorieHistory = MutableLiveData<List<TrackerRecord>>()
     val calorieHistory: LiveData<List<TrackerRecord>> get() = _calorieHistory
-
-    private val _entriesForCurrentMonth = MutableLiveData<List<TrackerRecord>>()
-    val entriesForCurrentMonth: LiveData<List<TrackerRecord>> = _entriesForCurrentMonth
 
     init {
         fetchAllEntries()
@@ -48,10 +44,14 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
         viewModelScope.launch {
             try {
                 val entries = repository.getAllEntries()
+
+                // Post all entries and latest entry
                 _allEntries.postValue(entries)
                 _latestEntry.postValue(entries.firstOrNull())
+
                 // Update the weight and calorie histories
                 updateHistories(entries)
+
             } catch (e: Exception) {
                 Log.e("TrackerViewModel", "Error fetching entries: ${e.message}", e)
             }
@@ -59,35 +59,13 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
     }
 
     private fun updateHistories(entries: List<TrackerRecord>) {
-        // Update weight and calorie histories from the fetched entries
-        _weightHistory.postValue(entries.filter { it.weight > 0 }) // Only include records with weight
-        _calorieHistory.postValue(entries.filter { it.caloriesIntake > 0 }) // Only include records with calories
-    }
+        // Update weight history: Only include records where weight is greater than 0
+        val weightHistory = entries.filter { it.weight > 0 }
+        _weightHistory.postValue(weightHistory)
 
-    fun addOrUpdateEntry(date: LocalDate, weight: Float, water: Int, calories: Float) {
-        val entry = TrackerRecord(date, weight, water, calories)
-        viewModelScope.launch {
-            try {
-                repository.insertOrUpdate(entry)
-                _latestEntry.postValue(entry)
-                fetchAllEntries() // This will update the histories as well
-            } catch (e: Exception) {
-                Log.e("TrackerViewModel", "Error adding/updating entry: ${e.message}", e)
-            }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun getEntryByDate(date: LocalDate): LiveData<TrackerRecord?> {
-        val result = MutableLiveData<TrackerRecord?>()
-        viewModelScope.launch {
-            try {
-                result.postValue(repository.getEntryByDate(date))
-            } catch (e: Exception) {
-                Log.e("TrackerViewModel", "Error getting entry by date: ${e.message}", e)
-            }
-        }
-        return result
+        // Update calorie history: Only include records where calories intake is greater than 0
+        val calorieHistory = entries.filter { it.caloriesIntake > 0 }
+        _calorieHistory.postValue(calorieHistory)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -97,7 +75,7 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
             if (record != null) {
                 record.weight = weight
                 repository.insertOrUpdate(record)
-                fetchAllEntries() // Update histories after weight change
+                fetchAllEntries() // Ensure weightHistory and other data are updated
             } else {
                 Log.e("TrackerViewModel", "No record found for date: $date")
             }
@@ -123,18 +101,6 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun fetchCurrentWaterIntake(date: LocalDate) {
-        viewModelScope.launch {
-            try {
-                val intake = repository.getEntryByDate(date)?.waterIntake ?: 0
-                _currentWaterIntake.postValue(intake)
-            } catch (e: Exception) {
-                Log.e("TrackerViewModel", "Error fetching current water intake: ${e.message}", e)
-            }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
     fun addCalories(date: LocalDate, calories: Float) {
         viewModelScope.launch {
             val record = repository.getEntryByDate(date)
@@ -148,26 +114,4 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
             }
         }
     }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun fetchEntriesForCurrentMonth() {
-        viewModelScope.launch {
-            val entries = repository.getEntriesForCurrentMonth()
-            _entriesForCurrentMonth.postValue(entries)
-        }
-    }
-    class TrackerViewModel @Inject constructor(private val repository: TrackerRepository) : ViewModel() {
-        private val _trackerRecords = MutableStateFlow<List<TrackerRecord>>(emptyList())
-        val trackerRecords: StateFlow<List<TrackerRecord>> = _trackerRecords.asStateFlow()
-
-        init {
-            fetchAllEntries()
-        }
-
-        private fun fetchAllEntries() {
-            viewModelScope.launch {
-                _trackerRecords.value = repository.getAllEntries()
-            }
-        }
-}
 }

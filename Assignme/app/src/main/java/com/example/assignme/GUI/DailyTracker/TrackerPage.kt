@@ -1,21 +1,17 @@
 package com.example.assignme.GUI.DailyTracker
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.graphics.Color // Add this line
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.assignme.AndroidBar.AppBottomNavigation
@@ -24,6 +20,7 @@ import com.example.assignme.ViewModel.TrackerViewModel
 import com.example.assignme.ViewModel.UserViewModel
 import java.time.LocalDate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import com.example.assignme.DataClass.TrackerRecord
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -31,9 +28,25 @@ import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import com.patrykandpatrick.vico.compose.chart.column.columnChart
 import com.patrykandpatrick.vico.compose.axis.horizontal.bottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.startAxis
+import java.time.YearMonth
+
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.sp
+import com.patrykandpatrick.vico.compose.component.lineComponent
+import com.patrykandpatrick.vico.compose.component.textComponent
+import com.patrykandpatrick.vico.core.chart.column.ColumnChart
+import com.patrykandpatrick.vico.core.chart.line.LineChart
+import com.patrykandpatrick.vico.core.component.text.VerticalPosition
+import com.patrykandpatrick.vico.core.formatter.DecimalFormatValueFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackerPage(
     navController: NavController,
@@ -108,8 +121,13 @@ fun TrackerPage(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         // Title Row
-                        Text(text = "Weight", style = MaterialTheme.typography.headlineSmall)
-
+                        Text(
+                            text = "Weight",
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = MaterialTheme.typography.headlineSmall.fontSize // Keep the same size
+                            )
+                        )
                         // Row for weight value and chart
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -143,15 +161,22 @@ fun TrackerPage(
                                 value = weight,
                                 onValueChange = { weight = it },
                                 label = { Text("Today's weight") },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number // Set keyboard type to number
+                                ),
+                                visualTransformation = VisualTransformation.None // Optionally, disable any transformation
                             )
-                            Button(onClick = {
-                                if (weight.isNotEmpty()) {
-                                    val currentDate = LocalDate.now()
-                                    trackerViewModel.updateWeight(currentDate, weight.toFloat())
-                                    weightUpdateMessage = "Successfully updated weight to $weight kg."
-                                }
-                            }) {
+                            Button(
+                                onClick = {
+                                    if (weight.isNotEmpty()) {
+                                        val currentDate = LocalDate.now()
+                                        trackerViewModel.updateWeight(currentDate, weight.toFloat())
+                                        weightUpdateMessage = "Successfully updated weight to $weight kg."
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Change color as needed
+                            ) {
                                 Text("Update")
                             }
                         }
@@ -181,7 +206,13 @@ fun TrackerPage(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         // Title Row
-                        Text(text = "Calories", style = MaterialTheme.typography.headlineSmall)
+                        Text(
+                            text = "Calories",
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = MaterialTheme.typography.headlineSmall.fontSize // Keep the same size
+                            )
+                        )
 
                         // Row for calorie value and chart
                         Row(
@@ -216,15 +247,22 @@ fun TrackerPage(
                                 value = calories.toString(),
                                 onValueChange = { calories = it.toIntOrNull() ?: 0 },
                                 label = { Text("Today's calories") },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number // Set keyboard type to number
+                                ),
+                                visualTransformation = VisualTransformation.None // Optionally, disable any transformation
                             )
-                            Button(onClick = {
-                                if (calories > 0) {
-                                    val currentDate = LocalDate.now()
-                                    trackerViewModel.addCalories(currentDate, calories.toFloat())
-                                    calorieAddMessage = "Successfully added $calories kcal."
-                                }
-                            }) {
+                            Button(
+                                onClick = {
+                                    if (calories > 0) {
+                                        val currentDate = LocalDate.now()
+                                        trackerViewModel.addCalories(currentDate, calories.toFloat())
+                                        calorieAddMessage = "Successfully added $calories kcal."
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Change color as needed
+                            ) {
                                 Text("Add")
                             }
                         }
@@ -241,7 +279,8 @@ fun TrackerPage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 16.dp)
-                        .padding(bottom = 25.dp)
+                        .padding(bottom = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Use the colors parameter
                 ) {
                     Text("Daily Analysis")
                 }
@@ -250,28 +289,71 @@ fun TrackerPage(
     }
 }
 
+@Composable
+fun WaterIntakeSection(
+    currentWaterIntake: Int,
+    onAddWaterClick: () -> Unit // Keep this as a normal function
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Title Row
+            Text(
+                text = "Water Intake",
+                fontWeight = FontWeight.Bold, // Make the title bold
+                fontSize = MaterialTheme.typography.titleLarge.fontSize // Keep the same font size
+            )
+            Text("${currentWaterIntake * 100}ml water (${currentWaterIntake} Glass)")
+        }
+
+        Button(
+                onClick = onAddWaterClick, // Use the normal function here
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Set the button color
+            ) {
+                Text("Add water")
+            }
+        }
+    }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun WeightChart(weightHistory: List<TrackerRecord>) {
-    // Prepare the chart data as pairs of (x: day of month, y: weight)
-    val chartData = weightHistory.map { it.date.dayOfMonth.toFloat() to it.weight }
+fun WeightChart(weightHistory: List<TrackerRecord>, lineColor: Color = Color.Blue) {
+    // Get the current month and fill missing days with default weights (e.g., 0f or null)
+    val currentMonth = YearMonth.now()
+    val daysInMonth = currentMonth.lengthOfMonth()
 
-    // Log the chart data
-    Log.d("WeightChart", "Entries: ${chartData.size}, Data: $chartData")
+    // Create a map for easy lookup of weight by day
+    val weightByDay = weightHistory.associate { it.date.dayOfMonth to it.weight }
 
-    // Create the entry model
-    val chartEntryModel = entryModelOf(*chartData.toTypedArray())
+    // Fill the missing days with default values (e.g., 0f if no data for that day)
+    val filledWeightData = (1..daysInMonth).map { day ->
+        day.toFloat() to (weightByDay[day] ?: 0f) // x-axis is day, y-axis is weight
+    }
+
+    // Log the filled weight data
+    Log.d("WeightChart", "Entries: ${filledWeightData.size}, Data: $filledWeightData")
+
+    // Create the entry model with the filled data
+    val chartEntryModel = entryModelOf(*filledWeightData.toTypedArray())
+
+    // Define the line specification with custom color
+    val lineSpec = LineChart.LineSpec(
+        lineColor = lineColor.toArgb() // Convert Color to Int if needed
+    )
 
     Chart(
-        chart = lineChart(),
+        chart = lineChart(
+            lines = listOf(lineSpec) // Pass the list of line specifications
+        ),
         model = chartEntryModel,
         startAxis = startAxis(
-            title = "Weight (kg)",
+            title = "Weight (kg)", // y-axis: weight
             valueFormatter = { value, _ -> value.toString() }
         ),
         bottomAxis = bottomAxis(
-            title = "Day of Month",
+            title = "Day of Month", // x-axis: day of month (date)
             valueFormatter = { value, _ -> value.toInt().toString() }
         ),
         modifier = Modifier
@@ -292,118 +374,33 @@ fun CaloriesChart(calorieHistory: List<TrackerRecord>) {
     // Create the entry model
     val chartEntryModel = entryModelOf(*chartData.toTypedArray())
 
+    // Define the line components for the columns
+    val lineComponent = lineComponent(
+        color = Color.Gray // Customize your color here
+    )
+
+    // Create the ColumnChart with smaller bar widths
+    val columnChart = ColumnChart(
+        columns = listOf(lineComponent),
+        spacingDp = 4f, // Reduce distance between neighboring column collections
+        innerSpacingDp = 4f, // Reduce distance between grouped columns
+        mergeMode = ColumnChart.MergeMode.Grouped
+    )
+
+    // Render the chart with customized axes
     Chart(
-        chart = columnChart(),
+        chart = columnChart,
         model = chartEntryModel,
         startAxis = startAxis(
-            title = "Calories",
-            valueFormatter = { value, _ -> value.toInt().toString() }
+            title = "Calories", // Title for the Y-axis
+            valueFormatter = { value, _ -> value.toInt().toString() } // Format for Y-axis labels
         ),
         bottomAxis = bottomAxis(
-            title = "Day of Month",
-            valueFormatter = { value, _ -> value.toInt().toString() }
+            title = "Day of Month", // Title for the X-axis
+            valueFormatter = { value, _ -> value.toInt().toString() } // Format for X-axis labels
         ),
         modifier = Modifier
             .fillMaxWidth()
             .height(300.dp)
     )
 }
-
-@Composable
-fun WeightSection(
-    weight: String,
-    onWeightChange: (String) -> Unit,
-    onUpdateClick: () -> Unit // Change this to a regular function type
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Weight", fontWeight = MaterialTheme.typography.titleLarge.fontWeight)
-            Text(weight, style = MaterialTheme.typography.displayLarge)
-            Text("kg", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
-
-            // Text input for weight
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                OutlinedTextField(
-                    value = weight,
-                    onValueChange = onWeightChange,
-                    label = { Text("Today's weight") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = onUpdateClick, // This will now accept the correct type
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Update")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun WaterIntakeSection(
-    currentWaterIntake: Int,
-    onAddWaterClick: () -> Unit // Keep this as a normal function
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Water Intake", fontWeight = MaterialTheme.typography.titleLarge.fontWeight)
-            Text("${currentWaterIntake * 100}ml water (${currentWaterIntake} Glass)")
-
-            Button(
-                onClick = onAddWaterClick, // Use the normal function here
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Add water")
-            }
-        }
-    }
-}
-
-@Composable
-fun CaloriesSection(
-    calories: Int,
-    onCaloriesChange: (String) -> Unit,
-    onAddClick: () -> Unit // Keep this as a normal function
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Calories", fontWeight = MaterialTheme.typography.titleLarge.fontWeight)
-            Text("$calories", style = MaterialTheme.typography.displaySmall)
-            Text("kcal")
-
-            // Text input for calories
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                OutlinedTextField(
-                    value = calories.toString(),
-                    onValueChange = onCaloriesChange,
-                    label = { Text("Today's calories") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = onAddClick, // Use the normal function here
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Text("Add")
-                }
-            }
-        }
-    }
-}
-

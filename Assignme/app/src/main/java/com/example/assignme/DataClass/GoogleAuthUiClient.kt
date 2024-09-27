@@ -56,7 +56,8 @@ class GoogleAuthUiClient(
                     "profilePictureUrl" to user?.photoUrl?.toString(),
                     "gender" to null, // Placeholder for additional fields
                     "country" to null,
-                    "authmethod" to "google" // Store the authentication method
+                    "authmethod" to "google", // Store the authentication method
+                    "type" to "normal"
                 )
 
                 // Store user data in Firestore
