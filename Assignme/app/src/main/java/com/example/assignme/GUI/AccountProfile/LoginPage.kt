@@ -412,33 +412,28 @@ fun handleSignInResult2(result: SignInResult, navController: NavController, user
         userViewModel.setUserId(it)
         val userType = result.data?.userType
 
-        if(userViewModel.userId.value == "rxpA9YJO2dVB59oozIeCxzGyobs1"){
-            navController.navigate("admin_page")
-        }else{
-            navController.navigate("profile_page")
-        }
+
         when (userType) {
-//            "admin" -> {
-//                // Navigate to admin dashboard
-//                navController.navigate("admin_page") {
-//                    popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
-//                }
-//            }
-//            "normal" -> {
-//                // Navigate to normal user home screen
-//                navController.navigate("profile_page") {
-//                    popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
-//                }
-//            }
-//            else -> {
-//                // Fallback, if the user type is unknown or not set
-//                navController.navigate("main_page")
-//            }
-//        }
+            "admin" -> {
+                // Navigate to admin dashboard
+                navController.navigate("admin_page") {
+                    popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
+                }
+            }
+            "normal" -> {
+                // Navigate to normal user home screen
+                navController.navigate("profile_page") {
+                    popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
+                }
+            }
+            else -> {
+                // Fallback, if the user type is unknown or not set
+                navController.navigate("main_page")
+            }
         }
     }
-
 }
+
 
 
 // Firebase login function

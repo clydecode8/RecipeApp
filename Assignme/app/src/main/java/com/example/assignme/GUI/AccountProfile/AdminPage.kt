@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
@@ -42,11 +43,24 @@ import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminDashboard(userViewModel: UserProfileProvider, navController: NavController, themeViewModel: ThemeViewModel) {
+fun AdminDashboard(
+    userViewModel: UserProfileProvider,
+    navController: NavController,
+    themeViewModel: ThemeViewModel
+) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Admin Page") }, // Add a title
+                title = { Text("Admin Dashboard") }, // Add a title
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                },
                 actions = {
                     IconButton(onClick = { /* Handle settings action */ }) {
                         Icon(
@@ -57,6 +71,7 @@ fun AdminDashboard(userViewModel: UserProfileProvider, navController: NavControl
                     }
                 }
             )
+
         }
     ) { innerPadding ->
         LazyColumn(
@@ -72,68 +87,60 @@ fun AdminDashboard(userViewModel: UserProfileProvider, navController: NavControl
                 ProfileSection(navController, userViewModel)
             }
             item {
-                //AdminActions(navController)
+                AdminActions(navController)
             }
             item {
-                //Text(text = "Menu Button End", color = Color.Black)
-                val userId by userViewModel.userId.observeAsState()
-                // Ensure you observe the LiveData correctly
-                val prof by userViewModel.adminProfile.observeAsState(initial = AdminProfile())
-                userId?.let {
-
-                    Log.d("AdminPage", "Current profile name: ${prof.name}")
-
-// Check if the profile name is null and fetch if needed
-                    if (prof.name == null) {
-                        println("Fetching admin profile...")
-                        userViewModel.fetchAdminProfile(it)
-                    }
-
-// Column for profile picture and name
-                    Column(
-                        modifier = Modifier
-                             // Add space between Column and button
-                    ) {
-                        // Display profile picture if available
-                        if (!prof.profilePictureUrl.isNullOrBlank()) {
-                            Image(
-                                painter = rememberImagePainter(prof.profilePictureUrl),
-                                contentDescription = "Profile Picture",
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            // Display default image if profilePictureUrl is null
-                            Image(
-                                painter = painterResource(id = R.drawable.google),
-                                contentDescription = "Default Profile Picture",
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-
-                        // Display the name
-                        Text(
-                            text = "No Name Available", // Fallback text if name is null
-                            fontSize = 18.sp,
-                            modifier = Modifier.padding(top = 8.dp) // Add space between picture and name
-                        )
-                    }
-                    Text(
-                        text = "No Name Available", // Fallback text if name is null
-                        fontSize = 18.sp,
-                        modifier = Modifier.padding(top = 8.dp) // Add space between picture and name
-                    )
-
-                    AdminActions(navController = navController)
-                }
+                // You can add more items here as needed
             }
         }
     }
+}
+
+@Composable
+fun ProfileSection(navController: NavController, userViewModel: UserProfileProvider) {
+    val userId by userViewModel.userId.observeAsState()
+    val adminProfile by userViewModel.adminProfile.observeAsState(initial = AdminProfile())
+
+    // Fetch profile data if not available
+    userId?.let { userId ->
+        if (adminProfile.name == null) {
+            userViewModel.fetchAdminProfile(userId)
+        }
+    }
+
+    // Display centered profile picture and name
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Clickable profile picture
+        Image(
+            painter = if (!adminProfile.profilePictureUrl.isNullOrBlank()) {
+                rememberImagePainter(adminProfile.profilePictureUrl)
+            } else {
+                painterResource(id = R.drawable.google) // Default image
+            },
+            contentDescription = "Profile Picture",
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .clickable { navController.navigate("edit_profile") }, // Navigate to edit profile
+            contentScale = ContentScale.Crop
+        )
+
+        // Display the name if available
+        Text(
+            text = "Welcome ${adminProfile.name.orEmpty()}!",
+            fontSize = 18.sp,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp)) // Space below the profile section
+
+    // Divider section
+    HorizontalDivider()
 }
 
 @Composable
@@ -143,36 +150,6 @@ fun AdminActions(navController: NavController) {
         ActionButton(text = "Approve Recipe", onClick = { navController.navigate("approve_recipe") })
         ActionButton(text = "Add Admin", onClick = { navController.navigate("add_admin") })
     }
-}
-
-@Composable
-fun ProfileSection(navController: NavController, userViewModel: UserProfileProvider) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-
-
-
-    }
-
-    Spacer(modifier = Modifier.height(16.dp)) // Space below the button
-
-    // Divider section with "or login with"
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        HorizontalDivider(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 4.dp),
-            thickness = 1.dp,
-            color = Color.Gray
-        )
-    }
-
 }
 
 @Composable
@@ -198,12 +175,17 @@ fun ActionButton(text: String, onClick: () -> Unit) {
     }
 
     // Divider section
+    HorizontalDivider()
+}
+
+@Composable
+fun HorizontalDivider() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
         modifier = Modifier.fillMaxWidth()
     ) {
-        HorizontalDivider(
+        Divider(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 2.dp),
@@ -212,6 +194,7 @@ fun ActionButton(text: String, onClick: () -> Unit) {
         )
     }
 }
+
 
 
 
