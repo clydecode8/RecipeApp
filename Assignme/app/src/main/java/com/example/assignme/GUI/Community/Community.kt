@@ -12,9 +12,23 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -39,26 +53,17 @@ import com.example.assignme.DataClass.WindowInfo
 import com.example.assignme.DataClass.rememberWidowInfo
 import com.example.assignme.R
 import com.example.assignme.ViewModel.Comment
-import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserViewModel
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SocialAppUI(navController: NavController, userViewModel: UserViewModel, themeViewModel: ThemeViewModel) {
+fun SocialAppUI(navController: NavController, userViewModel: UserViewModel) {
     val windowInfo = rememberWidowInfo()
     val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
     val userName = userProfile.name ?: "User"
     var selectedTab by remember { mutableStateOf(0) }
 
-    // 使用 MaterialTheme 来设置整体主题
-    MaterialTheme(
-        colors = if (themeViewModel.isDarkTheme.value) {
-            darkColors()
-        } else {
-            lightColors()
-        }
-    ) {
         Scaffold(
             topBar = { AppTopBar(title = "Welcome $userName,", navController = navController) },
             bottomBar = { AppBottomNavigation(navController) },
@@ -71,44 +76,33 @@ fun SocialAppUI(navController: NavController, userViewModel: UserViewModel, them
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
                     userViewModel = userViewModel,
-                    themeViewModel = themeViewModel
                 )
                 is WindowInfo.WindowType.Medium -> MediumLayout(
                     innerPadding = innerPadding,
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
                     userViewModel = userViewModel,
-                    themeViewModel = themeViewModel
                 )
                 is WindowInfo.WindowType.Expanded -> ExpandedLayout(
                     innerPadding = innerPadding,
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
                     userViewModel = userViewModel,
-                    themeViewModel = themeViewModel
                 )
             }
         }
-    }
 }
 
 @Composable
 fun TabRowContent(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    themeViewModel: ThemeViewModel
+
 ) {
-    val backgroundColor = if (themeViewModel.isDarkTheme.value) {
-        MaterialTheme.colors.surface // 深色主题使用默认的surface颜色
-    } else {
-        Color(0xFFF8F8F8)
-    }
-
-
     TabRow(
         selectedTabIndex = selectedTab,
-        backgroundColor = backgroundColor,
-        contentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+//        backgroundColor = backgroundColor,
+//        contentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.height(50.dp)
     ) {
         Tab(
@@ -130,12 +124,11 @@ fun CompactLayout(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     userViewModel: UserViewModel,
-    themeViewModel: ThemeViewModel
 ) {
     Column(modifier = Modifier.padding(innerPadding)
 //        .background(MaterialTheme.colors.background)
     ) {
-        TabRowContent(selectedTab, onTabSelected,themeViewModel)
+        TabRowContent(selectedTab, onTabSelected)
         PostComposer(userViewModel)
         if (selectedTab == 0) {
             PostList(userViewModel)
@@ -151,10 +144,9 @@ fun MediumLayout(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     userViewModel: UserViewModel,
-    themeViewModel: ThemeViewModel
 ) {
     Column(modifier = Modifier.padding(innerPadding)) {
-        TabRowContent(selectedTab, onTabSelected, themeViewModel)
+        TabRowContent(selectedTab, onTabSelected)
         Row {
             Column(modifier = Modifier.weight(1f)) {
                 PostComposer(userViewModel)
@@ -177,10 +169,9 @@ fun ExpandedLayout(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     userViewModel: UserViewModel,
-    themeViewModel: ThemeViewModel
 ) {
     Column(modifier = Modifier.padding(innerPadding)) {
-        TabRowContent(selectedTab, onTabSelected,themeViewModel)
+        TabRowContent(selectedTab, onTabSelected)
         Row {
             Column(modifier = Modifier.weight(1f)) {
                 PostComposer(userViewModel)
@@ -232,13 +223,13 @@ fun PostComposer(userViewModel: UserViewModel) {
                     .weight(1f)
                     .padding(start = 8.dp),
                 placeholder = { Text("What's on your mind?") },
-                colors = TextFieldDefaults.textFieldColors(
-                    textColor = MaterialTheme.colors.onSurface,
-                    cursorColor = Color(0xFFE23E3E),
-                    focusedIndicatorColor = Color(0xFFE23E3E),
-                    unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                    placeholderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
-                )
+//                colors = TextFieldDefaults.textFieldColors(
+//                    textColor = MaterialTheme.colors.onSurface,
+//                    cursorColor = Color(0xFFE23E3E),
+//                    focusedIndicatorColor = Color(0xFFE23E3E),
+//                    unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
+//                    placeholderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+//                )
             )
 
             IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
@@ -279,8 +270,8 @@ fun PostComposer(userViewModel: UserViewModel) {
                 .align(Alignment.End)
                 .padding(top = 8.dp),
             colors = ButtonDefaults.buttonColors(
-                backgroundColor = Color(0xFFE23E3E),  // 设置背景颜色为红色
-                contentColor = Color.White    // 设置文本颜色为白色
+                backgroundColor = Color(0xFFE23E3E),
+                contentColor = Color.White// 设置背景颜色为红色
             )
         ) {
             Text("Post")
@@ -336,7 +327,6 @@ fun PostItem(
                     )
                     Text(
                         text = userViewModel.formatTimestamp(timestamp),
-                        style = MaterialTheme.typography.body2,
                         color = Color.Gray
                     )
                 }
@@ -500,7 +490,7 @@ fun ReportDialog(
             modifier = Modifier.padding(16.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Report Post", style = MaterialTheme.typography.h6)
+                Text("Report Post")
                 Spacer(modifier = Modifier.height(16.dp))
                 TextField(
                     value = reportReason,
@@ -577,7 +567,7 @@ fun EditPostDialog(currentContent: String, onDismiss: () -> Unit, onConfirm: (St
             modifier = Modifier.padding(16.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Edit Post", style = MaterialTheme.typography.h6)
+                Text("Edit Post")
                 TextField(
                     value = newContent,
                     onValueChange = { newContent = it },
@@ -632,7 +622,7 @@ fun CommentsDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = "Comments", style = MaterialTheme.typography.h6)
+                    Text(text = "Comments")
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
@@ -666,7 +656,7 @@ fun CommentsDialog(
                                 modifier = Modifier.padding(start = 8.dp)
                             )
                         }
-                        Divider()
+//                        Divider()
                     }
                 }
 
@@ -712,7 +702,7 @@ fun PostList(userViewModel: UserViewModel) {
     LazyColumn {
         if (posts.isEmpty()) {
             item {
-                Text("No posts available", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.body1)
+                Text("No posts available", modifier = Modifier.padding(16.dp))
             }
         } else {
             items(posts.reversed(),key = { it.id }) { post ->
@@ -749,7 +739,7 @@ fun MyPostList(userViewModel: UserViewModel) {
     LazyColumn {
         if (myPosts.isEmpty()) {
             item {
-                Text("No posts available", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.body1)
+                Text("No posts available", modifier = Modifier.padding(16.dp))
             }
         } else {
             items(myPosts.reversed(), key = { it.id }) { post ->
