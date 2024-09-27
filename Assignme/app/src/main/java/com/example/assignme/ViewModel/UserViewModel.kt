@@ -22,6 +22,9 @@ class UserViewModel : ViewModel(), UserProfileProvider {
     private val _userProfile = MutableLiveData<UserProfile>()
     override val userProfile: LiveData<UserProfile> get() = _userProfile
 
+    private val _adminProfile = MutableLiveData<AdminProfile>()
+    override val adminProfile: LiveData<AdminProfile> get() = _adminProfile
+
     private val _posts = MutableLiveData<List<Post>>()
     val posts: LiveData<List<Post>> get() = _posts
 
@@ -58,6 +61,35 @@ class UserViewModel : ViewModel(), UserProfileProvider {
                 Log.d("UserViewModel", "Get failed with ", exception)
             }
     }
+
+    override fun fetchAdminProfile(userId: String) {
+        val db = FirebaseFirestore.getInstance()
+        Log.d("UserViewModel", "Fetching admin profile for user ID: $userId")
+
+        db.collection("admin").document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                Log.d("UserViewModel", "Document retrieved successfully.")
+
+                if (document != null) {
+                    Log.d("UserViewModel", "Document exists: ${document.id}")
+                    val profile = document.toObject(AdminProfile::class.java)
+                    if (profile != null) {
+                        _adminProfile.value = profile
+                        Log.d("UserViewModel", "Fetched admin profile: $profile")
+                    } else {
+                        Log.d("UserViewModel", "Profile conversion resulted in null for user: $userId")
+                    }
+                } else {
+                    Log.d("UserViewModel", "No such document for user: $userId")
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.d("UserViewModel", "Get failed with exception: ${exception.message}")
+            }
+    }
+
+
 
     // Function to update the user profile in the ViewModel (Google)
     fun updateUserProfile(userId: String) {
@@ -475,7 +507,17 @@ data class UserProfile(
     val phoneNumber: String? = null,
     val profilePictureUrl: String? = null,
     val gender: String? = null,
-    val country: String? = null
+    val country: String? = null,
+
+)
+data class AdminProfile(
+    val name: String? = null,
+    val email: String? = null,
+    val phoneNumber: String? = null,
+    val profilePictureUrl: String? = null,
+    val gender: String? = null,
+    val country: String? = null,
+
 )
 
 data class Post(

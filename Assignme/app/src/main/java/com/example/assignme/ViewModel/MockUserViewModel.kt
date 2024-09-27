@@ -12,6 +12,9 @@ class MockUserViewModel : UserProfileProvider {
     private val _userProfile = MutableLiveData<UserProfile>()
     override val userProfile: LiveData<UserProfile> get() = _userProfile
 
+    private val _adminProfile = MutableLiveData<AdminProfile>()
+    override val adminProfile: LiveData<AdminProfile> get() = _adminProfile
+
     override fun setUserId(id: String) {
         // Mock implementation
         _userId.value = id
@@ -26,6 +29,9 @@ class MockUserViewModel : UserProfileProvider {
     }
 
     override fun fetchUserProfile(it: String) {
+        TODO("Not yet implemented")
+    }
+    override fun fetchAdminProfile(it: String) {
         TODO("Not yet implemented")
     }
 }

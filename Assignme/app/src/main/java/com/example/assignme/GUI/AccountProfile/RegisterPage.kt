@@ -211,8 +211,14 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
     }
 
     Scaffold(
-        topBar = { AppTopBar(title = "Registration Page", navController = navController, modifier = Modifier) },
-        bottomBar = {  }
+        topBar = {
+            AppTopBar(
+                title = "Registration Page",
+                navController = navController,
+                modifier = Modifier
+            )
+        },
+        bottomBar = { /* Add a bottom bar if needed */ }
     ) { innerPadding ->
 
         BoxWithConstraints(
@@ -230,7 +236,8 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                     .fillMaxSize()
                     .padding(start = 16.dp, end = 16.dp, top = (screenHeight * 0.05f).dp)
                     .padding(bottom = 70.dp), // Padding to make space for the buttons
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.Start // Ensure correct alignment is used
             ) {
                 item {
                     // Heading Text
@@ -349,7 +356,6 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                 }
 
                 item {
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -375,7 +381,6 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                             Text(text = "Register", fontWeight = FontWeight.Bold)
                         }
                     }
-
                 }
 
                 item {
@@ -428,7 +433,6 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                 }
 
                 item {
-
                     // Google Icon Button centered at the bottom
                     Box(
                         modifier = Modifier
@@ -458,6 +462,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
             }
         }
     }
+
 }
 
 
@@ -638,7 +643,8 @@ fun submitRegistration(
                     "profilePictureUrl" to profilePictureUrl, // This will be null if not provided
                     "gender" to gender,
                     "country" to country,
-                    "authmethod" to "firebase"
+                    "authmethod" to "firebase",
+                    "type" to "normal"
                 )
 
                 db.collection("users").document(userId)

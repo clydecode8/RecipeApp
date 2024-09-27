@@ -66,12 +66,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
 
-    val colors = if (isSystemInDarkTheme()) {
-        darkColors()
-    } else {
-        lightColors()
-    }
-
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -79,16 +73,6 @@ fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
     var showErrorDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
-
-
-    // Initialize GoogleAuthUiClient
-    val context = LocalContext.current
-    val googleAuthUiClient = remember {
-        GoogleAuthUiClient(
-            context = context,
-            oneTapClient = Identity.getSignInClient(context)
-        )
-    }
 
     fun handleSignInResult(signInResult: SignInResult, navController: NavController) {
         when {
@@ -270,7 +254,7 @@ fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
                     message = dialogMessage,
                     onDismiss = {
                         showSuccessDialog = false
-                        navController.navigate("login_page") }
+                        navController.navigate("admin_page") }
                 )
             }
 
@@ -362,7 +346,9 @@ fun submitAdmin(
                     "phoneNumber" to phoneNumber,
                     "profilePictureUrl" to profilePictureUrl, // This will be null if not provided
                     "gender" to gender,
-                    "country" to country
+                    "country" to country,
+                    "authmethod" to "firebase",
+                    "type" to "admin"
                 )
 
                 db.collection("admin").document(userId)
@@ -398,8 +384,6 @@ fun submitAdmin(
             }
         }
 }
-
-
 
 @Composable
 fun ErrorDialogAdmin(

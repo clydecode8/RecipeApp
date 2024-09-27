@@ -6,16 +6,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.TextButton
-import androidx.compose.material.darkColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.lightColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -25,12 +28,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -42,9 +49,9 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
 import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.AndroidBar.AppTopBar
-import com.example.assignme.ViewModel.MockUserViewModel
 import com.example.assignme.R
 import com.example.assignme.ViewModel.MockThemeViewModel
+import com.example.assignme.ViewModel.MockUserViewModel
 import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserProfileProvider
@@ -52,20 +59,20 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
-fun EditProfileScreen(
+fun EditAdminProfileScreen(
     navController: NavController,
     userViewModel: UserProfileProvider,
     themeViewModel: ThemeViewModel
 ) {
 
+    val userId by userViewModel.userId.observeAsState()
+    val userProfile by userViewModel.userProfile.observeAsState(initial = UserProfile())
     // Lists of options
     val countries = listOf("Singapore", "Malaysia")
     val genders = listOf("Male", "Female")
 
-    // Observe user profile data
-    val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
 
     // Local states for the form fields, initialized with userProfile data
     var name by remember { mutableStateOf(userProfile.name ?: "") }
@@ -94,8 +101,18 @@ fun EditProfileScreen(
         }
     }
 
+
     // Update local states when userProfile changes
     LaunchedEffect(userProfile) {
+
+
+        if (userProfile.name.isNullOrEmpty()) {
+            userId?.let {
+                userViewModel.fetchAdminProfile(it)
+            } ?: run {
+                Log.d("ProfileSection", "User ID is null, cannot fetch admin profile.")
+            }
+        }
         name = userProfile.name ?: ""
         email = userProfile.email ?: ""
         phoneNumber = userProfile.phoneNumber ?: ""
@@ -142,7 +159,7 @@ fun EditProfileScreen(
             }
 
             item {
-                ProfileTextField2(
+                ProfileTextField(
                     label = "Name",
                     value = name,
                     onValueChange = { name = it }
@@ -150,7 +167,7 @@ fun EditProfileScreen(
             }
 
             item {
-                ProfileTextField2(
+                ProfileTextField(
                     label = "Email",
                     value = email,
                     onValueChange = { email = it }
@@ -158,7 +175,7 @@ fun EditProfileScreen(
             }
 
             item {
-                ProfileTextField2(
+                ProfileTextField(
                     label = "Phone number",
                     value = phoneNumber,
                     keyboardType = KeyboardType.Number,
@@ -174,13 +191,13 @@ fun EditProfileScreen(
             }
 
             item {
-                ProfileDropdown2(
+                ProfileDropdown(
                     label = "Country",
                     value = country,
                     onValueChange = { country = it },
                     options = countries
                 )
-                ProfileDropdown2(
+                ProfileDropdown(
                     label = "Gender",
                     value = gender,
                     onValueChange = { gender = it },
@@ -195,7 +212,7 @@ fun EditProfileScreen(
 
                         // Save user profile and optionally update profile picture
                         if (profilePictureUri != null) {
-                            uploadProfilePictureToFirebase2(userId, profilePictureUri!!) { imageUrl ->
+                            uploadProfilePictureToFirebase(userId, profilePictureUri!!) { imageUrl ->
                                 saveUserProfile(
                                     userId = userId,
                                     name = name,
@@ -242,17 +259,17 @@ fun EditProfileScreen(
 
         // Show dialogs if needed
         if (showSuccessDialog) {
-            SuccessDialog2(navController, onDismiss = { showSuccessDialog = false })
+            SuccessDialog(navController, onDismiss = { showSuccessDialog = false })
         }
 
         if (showErrorDialog) {
-            ErrorDialog2(onDismiss = { showErrorDialog = false })
+            ErrorDialog(onDismiss = { showErrorDialog = false })
         }
     }
 }
 
 @Composable
-fun ProfileTextField2(
+fun ProfileTextField(
     label: String,
     value: String?,
     onValueChange: (String) -> Unit,
@@ -276,7 +293,7 @@ fun ProfileTextField2(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileDropdown2(
+fun ProfileDropdown(
     label: String,
     value: String,
     options: List<String>,
@@ -320,7 +337,7 @@ fun ProfileDropdown2(
     }
 }
 
-fun uploadProfilePictureToFirebase2(
+fun uploadProfilePictureToFirebase(
     userId: String,
     uri: Uri,
     onComplete: (String?) -> Unit
@@ -480,12 +497,11 @@ private fun saveUserProfile(
         "country" to country,
         "gender" to gender,
         "profilePictureUrl" to (profilePictureUri ?: null), // Set to null if profilePictureUri is null
-        "authmethod" to authProvider,
-        "type" to "admin"
+        "authmethod" to authProvider  // Automatically set the auth method
     )
 
     // Save to Firestore
-    db.collection("admin").document(userId)
+    db.collection("users").document(userId)
         .set(userProfile)
         .addOnSuccessListener {
             Log.d("Firebase", "Profile successfully updated!")
@@ -499,7 +515,7 @@ private fun saveUserProfile(
 
 
 @Composable
-fun SuccessDialog2(navController: NavController ,onDismiss: () -> Unit) {
+fun SuccessDialog(navController: NavController, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
@@ -520,7 +536,7 @@ fun SuccessDialog2(navController: NavController ,onDismiss: () -> Unit) {
 }
 
 @Composable
-fun ErrorDialog2(onDismiss: () -> Unit) {
+fun ErrorDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
@@ -537,7 +553,7 @@ fun ErrorDialog2(onDismiss: () -> Unit) {
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewAdminEditProfileScreen() {
+fun PreviewEditProfileScreen() {
 
     val mockThemeViewModel = MockThemeViewModel()
     EditProfileScreen(
@@ -546,4 +562,3 @@ fun PreviewAdminEditProfileScreen() {
         themeViewModel = mockThemeViewModel
     )
 }
-
