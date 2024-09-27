@@ -247,7 +247,7 @@ fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvid
         userId?.let {
             // Fetch profile data based on userId if not already fetched
             if (userProfile.name == null) {
-                println("this had run")
+
                 userViewModel.fetchUserProfile(it)
             }
 
