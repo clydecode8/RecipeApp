@@ -165,7 +165,10 @@ fun DailyAnalysis(
                                 Box(modifier = Modifier.weight(1f).border((1 * tableSizeFactor).dp, Color.Gray)) {
                                     Text(
                                         header,
-                                        style = MaterialTheme.typography.titleMedium.copy(fontSize = (16 * tableSizeFactor).sp),
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontSize = (16 * tableSizeFactor).sp,
+                                            color = Color.Black // Set the text color to black
+                                        ),
                                         modifier = Modifier.padding((8 * tableSizeFactor).dp)
                                     )
                                 }
@@ -387,8 +390,6 @@ fun CaloriesIntakeRing(
     val percentage = (currentCalories / (calorieGoal?.toFloat() ?: 1f)).coerceIn(0f, 1f)
     val ringThickness = 20.dp
     val ringSize = 120.dp
-
-    val commonHeight = 56.dp
 
     // Only show the calorie goal input field and button if there is no goal set
     if (calorieGoal == null) {
