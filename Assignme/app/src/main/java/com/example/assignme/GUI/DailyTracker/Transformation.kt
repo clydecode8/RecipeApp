@@ -110,7 +110,6 @@ fun Transformation(
                         }
                         Spacer(modifier = Modifier.height(7.dp))
                     }
-
                     if (currentPhotoUri != null) {
                         // Image section with slider for adjustment
                         Column(
