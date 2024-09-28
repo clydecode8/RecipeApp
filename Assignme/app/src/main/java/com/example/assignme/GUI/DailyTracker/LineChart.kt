@@ -25,7 +25,6 @@ import com.example.assignme.ViewModel.UserViewModel
 @Composable
 fun LineChart(
     navController: NavController,
-    userViewModel: UserViewModel,
     trackerViewModel: TrackerViewModel
 ) {
     // Fetch weight history here or pass it from the previous screen if needed
@@ -56,11 +55,17 @@ fun LineChart(
                     modifier = Modifier.padding(bottom = 16.dp) // Spacing below the title
                 )
 
-                // Full line chart display
-                WeightChart(weightHistory, lineColor = Color.Blue)
-
-                // Space between chart and description
-                Spacer(modifier = Modifier.height(16.dp))
+                // Card for the line chart
+                Card(
+                    backgroundColor = Color(0xFFBBBABA), // Use the specified color
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp) // Set height for the card
+                        .padding(bottom = 16.dp) // Space below the card
+                ) {
+                    // Full line chart display
+                    WeightChart(weightHistory, lineColor = Color.Blue)
+                }
 
                 // Additional descriptive text below the chart
                 Text(
@@ -73,3 +78,4 @@ fun LineChart(
         }
     }
 }
+
