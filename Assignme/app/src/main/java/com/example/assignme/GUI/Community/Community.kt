@@ -19,6 +19,7 @@ import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +32,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +50,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
@@ -77,12 +80,44 @@ fun SocialAppUI(navController: NavController, userViewModel: UserViewModel) {
     val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
     val userName = userProfile.name ?: "User"
     var selectedTab by remember { mutableStateOf(0) }
+    var searchQuery by remember { mutableStateOf(TextFieldValue()) }
+    var isSearching by remember { mutableStateOf(false) }
 
-        Scaffold(
-            topBar = { AppTopBar(title = "Welcome $userName,", navController = navController) },
+
+    Scaffold(
+        topBar = {
+            if (isSearching) {
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = {
+                        searchQuery = it
+                        if (it.text.isEmpty()) {
+                            // Reset search results when the query is cleared
+                            userViewModel.clearSearchResults()
+                        }
+                    },
+                    onSearch = {
+                        userViewModel.searchUsers(it.text)
+                        isSearching = false
+                    },
+                    onClose = {
+                        isSearching = false
+                        searchQuery = TextFieldValue() // Clear the search query
+                        userViewModel.clearSearchResults() // Reset to all posts
+                    }
+                )
+            } else {
+                TopAppBar(
+                    title = { Text("Welcome $userName") },
+                    actions = {
+                        IconButton(onClick = { isSearching = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
+                    }
+                )
+            }
+        },
             bottomBar = { AppBottomNavigation(navController) },
-            // 在这里为 Scaffold 的内容添加背景颜色
-//            modifier = Modifier.background(MaterialTheme.colors.onSurface)
         ) { innerPadding ->
             when (windowInfo.screenWidthInfo) {
                 is WindowInfo.WindowType.Compact -> CompactLayout(
@@ -105,6 +140,32 @@ fun SocialAppUI(navController: NavController, userViewModel: UserViewModel) {
                 )
             }
         }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchBar(
+    query: TextFieldValue,
+    onQueryChange: (TextFieldValue) -> Unit,
+    onSearch: (TextFieldValue) -> Unit,
+    onClose: () -> Unit
+) {
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text("Search users...") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        leadingIcon = {
+            IconButton(onClick = { onSearch(query) }) {
+                Icon(Icons.Default.Search, contentDescription = "Search")
+            }
+        },
+        trailingIcon = {
+            IconButton(onClick = onClose) {
+                Icon(Icons.Default.Close, contentDescription = "Close")
+            }
+        }
+    )
 }
 
 @Composable
@@ -483,8 +544,9 @@ fun PostItem(
                     userViewModel.toggleLike(postId, liked)
                 }) {
                     Icon(
-                        painter = painterResource(id = if (liked) R.drawable.like else R.drawable.like),
+                        painter = painterResource(id = R.drawable.like), // 使用同一个图标
                         contentDescription = "Like",
+                        tint = if (liked) Color.Blue else Color.Gray, // 根据 liked 状态设置颜色
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -822,11 +884,30 @@ fun CommentsDialog(
 fun PostList(userViewModel: UserViewModel) {
     val posts by userViewModel.posts.observeAsState(emptyList())
     val users by userViewModel.users.observeAsState(emptyMap())
+    val searchResults by userViewModel.searchResults.observeAsState(emptyList())
 
     LazyColumn {
-        if (posts.isEmpty()) {
-            item {
-                Text("No posts available", modifier = Modifier.padding(16.dp))
+        if (searchResults.isNotEmpty()) {
+            items(searchResults, key = { it.id }) { post ->
+                val author = users[post.userId]
+                val authorName = author?.name ?: "User"
+                val authorImageUrl = author?.profilePictureUrl ?: R.drawable.profile.toString()
+
+                PostItem(
+                    authorName = authorName,
+                    authorImageUrl = authorImageUrl,
+                    content = post.content,
+                    imagePath = post.imagePath,
+                    videoPath = post.videoPath,
+                    mediaType = post.mediaType,
+                    likes = post.likes,
+                    comments = post.comments,
+                    postId = post.id,
+                    userViewModel = userViewModel,
+                    likedUsers = post.likedUsers,
+                    timestamp = post.timestamp,
+                    isMyPost = false
+                )
             }
         } else {
             items(posts.reversed(), key = { it.id }) { post ->
