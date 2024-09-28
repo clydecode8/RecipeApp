@@ -215,12 +215,12 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
 
         composable("lineChart_page") {
             val trackerViewModel: TrackerViewModel = hiltViewModel()
-            LineChart(navController, userViewModel, trackerViewModel)
+            LineChart(navController, trackerViewModel)
         }
 
         composable("barChart_page") {
             val trackerViewModel: TrackerViewModel = hiltViewModel()
-            BarChart(navController, userViewModel, trackerViewModel)
+            BarChart(navController, trackerViewModel)
         }
 
         composable("manageReportPost"){
