@@ -42,7 +42,7 @@ fun SocialFeedScreen(navController: NavController, userViewModel: UserViewModel)
         LazyColumn(modifier = Modifier.padding(innerPadding)) {
             item { ReportsButton(navController) }
             item { TrendingSection() }
-            items(posts) { post ->
+            items(posts.sortedByDescending { it.likes }) { post ->
                 PostItem(post, userViewModel)
             }
         }
@@ -189,86 +189,3 @@ fun CommentButton(comments: Int) {
         )
     }
 }
-
-
-
-
-//@Composable
-//fun LikeButton(likes: Int) {
-//    Row(
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Icon(
-//            painter = painterResource(id = R.drawable.like),
-//            contentDescription = "Likes",
-//            modifier = Modifier.size(24.dp)
-//        )
-//        Text(
-//            "$likes likes",
-//            modifier = Modifier
-//                .padding(start = 4.dp)
-//                .align(Alignment.CenterVertically)
-//        )
-//    }
-//}
-//
-//@Composable
-//fun CommentButton(comments: Int) {
-//    Row(
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Icon(
-//            painter = painterResource(id = R.drawable.ic_comment),
-//            contentDescription = "Comments",
-//            modifier = Modifier.size(24.dp)
-//        )
-//        Text(
-//            "$comments comments",
-//            modifier = Modifier
-//                .padding(start = 4.dp)
-//                .align(Alignment.CenterVertically)
-//        )
-//    }
-//}
-
-//data class Post(
-//    val authorName: String,
-//    val authorImageRes: Int,
-//    val timestamp: String,
-//    val content: String,
-//    val imageRes: Int? = null,
-//    val likes: Int,
-//    val comments: Int
-//)
-//
-//fun getSamplePosts(): List<Post> {
-//    return listOf(
-//        Post(
-//            authorName = "Elizabeth Jie",
-//            authorImageRes = R.drawable.background,
-//            timestamp = "16 Feb at 19:56",
-//            content = "Hello guys! Let me know what food to post in the comments below!",
-//            likes = 9,
-//            comments = 5
-//        ),
-//        Post(
-//            authorName = "Clyde",
-//            authorImageRes = R.drawable.back_arrow,
-//            timestamp = "16 Feb at 19:56",
-//            content = "Currently working from home.",
-//            imageRes = R.drawable.background,
-//            likes = 2,
-//            comments = 3
-//        )
-//    )
-//}
-
-//@Preview(showBackground = true)
-//@Composable
-//fun PreviewManagePost() {
-//
-//    SocialFeedScreen(
-//        navController = rememberNavController(),
-//        userViewModel = MockUserViewModel()
-//    )
-//}

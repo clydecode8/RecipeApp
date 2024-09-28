@@ -5,11 +5,13 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -34,6 +36,9 @@ class UserViewModel : ViewModel(), UserProfileProvider {
 
     private val _reportedPosts = MutableLiveData<List<Post>>()
     val reportedPosts: LiveData<List<Post>> = _reportedPosts
+
+    private val _searchResults = MutableLiveData<List<Post>>()
+    val searchResults: LiveData<List<Post>> = _searchResults
 
     override fun setUserId(id: String) {
         _userId.value = id
@@ -527,6 +532,24 @@ class UserViewModel : ViewModel(), UserProfileProvider {
                 Log.w("UserViewModel", "Error fetching tracker data", e)
                 onResult(null) // Return null on failure
             }
+    }
+
+    fun searchUsers(query: String) {
+        viewModelScope.launch {
+            val lowercaseQuery = query.toLowerCase()
+            val matchingUsers = users.value?.filter { (_, user) ->
+                user.name?.toLowerCase()?.contains(lowercaseQuery) == true
+            }?.keys?.toList() ?: emptyList()
+
+            val matchingPosts = posts.value?.filter { post ->
+                post.userId in matchingUsers
+            } ?: emptyList()
+
+            _searchResults.value = matchingPosts
+        }
+    }
+    fun clearSearchResults() {
+        _searchResults.value = emptyList()
     }
 }
 
