@@ -9,6 +9,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -428,20 +429,30 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             }
     }
 
-    private fun saveTrackerDataToFirestore(userId: String, data: Map<String, Any?>) {
-        val db = FirebaseFirestore.getInstance()
-        // Save tracker data in the "tracker" collection
-        db.collection("tracker").document(userId)
-            .set(data, SetOptions.merge()) // Use merge to avoid overwriting other fields
-            .addOnSuccessListener {
-                Log.d("UserViewModel", "Tracker data saved successfully")
+    // Upload image to Firebase Storage
+    private fun uploadImageToFirebaseStorage(imageUri: Uri, userId: String, onComplete: (String?) -> Unit) {
+        val storage = FirebaseStorage.getInstance()
+        val storageReference: StorageReference = storage.reference
+
+        // Create a reference to store the image under a unique filename (e.g., userId/image.jpg)
+        val imageReference = storageReference.child("users/$userId/${UUID.randomUUID()}.jpg")
+
+        // Upload the image
+        val uploadTask = imageReference.putFile(imageUri)
+
+        uploadTask.addOnSuccessListener {
+            // Get the download URL after the upload completes
+            imageReference.downloadUrl.addOnSuccessListener { uri ->
+                onComplete(uri.toString())  // Pass the image URL back
+            }.addOnFailureListener {
+                onComplete(null)  // Handle failure in getting download URL
             }
-            .addOnFailureListener { e ->
-                Log.w("UserViewModel", "Error saving tracker data", e)
-            }
+        }.addOnFailureListener {
+            onComplete(null)  // Handle upload failure
+        }
     }
 
-    // Function to save user data
+    // Function to save user data, including image URL
     fun saveUserData(
         weight: String,
         height: String,
@@ -449,19 +460,38 @@ class UserViewModel : ViewModel(), UserProfileProvider {
         userId: String,
         onComplete: (Boolean) -> Unit
     ) {
-        val userData = mapOf(
-            "weight" to weight,
-            "height" to height,
-            "bodyImageUrl" to imageUri?.toString() // Convert Uri to string
-        )
+        // First upload the image to Firebase Storage if the imageUri is not null
+        if (imageUri != null) {
+            uploadImageToFirebaseStorage(imageUri, userId) { imageUrl ->
+                if (imageUrl != null) {
+                    // If image upload was successful, save the user data with the image URL
+                    val userData = mapOf(
+                        "weight" to weight,
+                        "height" to height,
+                        "bodyImageUrl" to imageUrl // Store the image download URL in Firestore
+                    )
+                    saveUserDataToFirestore(userId, userData, onComplete)
+                } else {
+                    onComplete(false)  // Image upload failed
+                }
+            }
+        } else {
+            // If no image is uploaded, save the user data without the image URL
+            val userData = mapOf(
+                "weight" to weight,
+                "height" to height
+            )
+            saveUserDataToFirestore(userId, userData, onComplete)
+        }
+    }
 
-        // Save user data to Firestore under the user's document
+    // Helper function to save user data to Firestore
+    private fun saveUserDataToFirestore(userId: String, userData: Map<String, Any?>, onComplete: (Boolean) -> Unit) {
         val db = FirebaseFirestore.getInstance()
         db.collection("tracker").document(userId)
-            .set(userData, SetOptions.merge()) // Merge with existing data if any
+            .set(userData, SetOptions.merge()) // Use merge to avoid overwriting other fields
             .addOnSuccessListener {
                 Log.d("UserViewModel", "User data saved successfully")
-                saveTrackerDataToFirestore(userId, userData) // Save tracker data
                 onComplete(true) // Notify success
             }
             .addOnFailureListener { e ->
@@ -470,6 +500,7 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             }
     }
 
+    // Function to fetch tracker data from Firestore
     fun fetchTrackerData(userId: String, onResult: (TrackerData?) -> Unit) {
         val db = FirebaseFirestore.getInstance()
         db.collection("tracker").document(userId)
@@ -497,9 +528,7 @@ class UserViewModel : ViewModel(), UserProfileProvider {
                 onResult(null) // Return null on failure
             }
     }
-
 }
-
 
 data class UserProfile(
     val name: String? = null,

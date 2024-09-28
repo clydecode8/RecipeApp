@@ -5,6 +5,7 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -49,7 +50,6 @@ import com.patrykandpatrick.vico.core.component.text.VerticalPosition
 import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.FloatEntry
 import com.patrykandpatrick.vico.core.formatter.DecimalFormatValueFormatter
-
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -123,12 +123,12 @@ fun TrackerPage(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                        colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF969696),  // Light blue background
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFBBBABA),  // Light blue background
                         contentColor = Color.Black           // Content (text, icons) color
                     )
-                )  {
+                ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
@@ -154,11 +154,12 @@ fun TrackerPage(
                                 Text(text = "$weight Kg", style = MaterialTheme.typography.headlineMedium)
                             }
 
-                            // Right Column for Weight Chart
+                            // Right Column for Weight Chart (Clickable)
                             Box(
                                 modifier = Modifier
                                     .padding(start = 16.dp)
                                     .size(height = 100.dp, width = 200.dp)
+                                    .clickable { navController.navigate("lineChart_page") } // Navigate to line chart
                             ) {
                                 WeightChart(weightHistory)
                             }
@@ -211,9 +212,9 @@ fun TrackerPage(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                        colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF969696),  // Light blue background
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFBBBABA),  // Light blue background
                         contentColor = Color.Black           // Content (text, icons) color
                     )
                 ) {
@@ -243,11 +244,12 @@ fun TrackerPage(
                                 Text(text = "$calories Kcal", style = MaterialTheme.typography.headlineMedium)
                             }
 
-                            // Right Column for Calories Chart
+                            // Right Column for Calories Chart (Clickable)
                             Box(
                                 modifier = Modifier
                                     .padding(start = 16.dp)
                                     .size(height = 100.dp, width = 200.dp)
+                                    .clickable { navController.navigate("barChart_page") } // Navigate to bar chart
                             ) {
                                 CaloriesChart(calorieHistory)
                             }
@@ -296,7 +298,7 @@ fun TrackerPage(
                     Button(
                         onClick = {
                             navController.navigate("transformation_page")
-                            Log.d(TAG, "Body Comparison button clicked")
+                            Log.d("TrackerPage", "Body Comparison button clicked")
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Change color as needed
@@ -322,6 +324,7 @@ fun TrackerPage(
     }
 }
 
+
 @Composable
 fun WaterIntakeSection(
     currentWaterIntake: Int,
@@ -332,7 +335,7 @@ fun WaterIntakeSection(
             .fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF969696),  // Light blue background
+            containerColor = Color(0xFFBBBABA),  // Light blue background
             contentColor = Color.Black           // Content (text, icons) color
         )
     ) {
@@ -388,9 +391,10 @@ fun WeightChart(weightHistory: List<TrackerRecord>, lineColor: Color = Color.Blu
             lines = listOf(lineSpec) // Pass the line specification
         ),
         model = chartEntryModel,
+        // Inside your WeightChart function definition
         startAxis = startAxis(
-            title = "Weight (kg)", // Y-axis: Weight
-            valueFormatter = { value, _ -> value.toString() } // Format Y-axis values
+            title = "Weight (kg)",
+            valueFormatter = { value, _ -> value.toInt().toString() } // Ensure integer formatting
         ),
         bottomAxis = bottomAxis(
             title = "Day of Month", // X-axis: Day of month

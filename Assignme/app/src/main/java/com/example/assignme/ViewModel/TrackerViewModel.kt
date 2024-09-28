@@ -1,5 +1,7 @@
 package com.example.assignme.ViewModel
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -10,21 +12,27 @@ import androidx.lifecycle.viewModelScope
 import com.example.assignme.DataClass.TrackerRecord
 import com.example.assignme.DataClass.TrackerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
-class TrackerViewModel @Inject constructor(private val repository: TrackerRepository) : ViewModel() {
+class TrackerViewModel @Inject constructor(
+    private val repository: TrackerRepository,
+    @ApplicationContext private val context: Context // Inject SharedPreferences through context
+) : ViewModel() {
+
+    // SharedPreferences instance for storing the calorie goal
+    private val sharedPreferences: SharedPreferences = context.getSharedPreferences("tracker_prefs", Context.MODE_PRIVATE)
 
     private val _allEntries = MutableLiveData<List<TrackerRecord>>()
     val allEntries: LiveData<List<TrackerRecord>> get() = _allEntries
 
     private val _latestEntry = MutableLiveData<TrackerRecord?>()
-    val latestEntry: LiveData<TrackerRecord?> get() = _latestEntry
+
+    private val _currentWeight = MutableLiveData<Float?>(null) // Create MutableLiveData for current weight
+    val currentWeight: LiveData<Float?> get() = _currentWeight // Expose it as LiveData
 
     private val _currentWaterIntake = MutableLiveData<Int>(0)
     val currentWaterIntake: LiveData<Int> = _currentWaterIntake
@@ -35,8 +43,33 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
     private val _calorieHistory = MutableLiveData<List<TrackerRecord>>()
     val calorieHistory: LiveData<List<TrackerRecord>> get() = _calorieHistory
 
+    private val _calorieGoal = MutableLiveData<Int?>()
+    val calorieGoal: LiveData<Int?> get() = _calorieGoal
+
     init {
         fetchAllEntries()
+        loadCalorieGoal() // Load calorie goal from SharedPreferences
+    }
+
+    // Load the calorie goal from SharedPreferences
+    private fun loadCalorieGoal() {
+        val savedGoal = sharedPreferences.getInt("calorie_goal", -1)
+        if (savedGoal != -1) {
+            _calorieGoal.value = savedGoal // Set the calorie goal LiveData if it was previously saved
+        } else {
+            _calorieGoal.value = null // No goal was set
+        }
+    }
+
+    // Save the calorie goal to SharedPreferences
+    private fun saveCalorieGoal(goal: Int) {
+        sharedPreferences.edit().putInt("calorie_goal", goal).apply()
+    }
+
+    // Function to set the calorie goal
+    fun setCalorieGoal(goal: Int) {
+        _calorieGoal.value = goal
+        saveCalorieGoal(goal) // Save the goal to SharedPreferences
     }
 
     private fun fetchAllEntries() {
@@ -74,6 +107,7 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
             if (record != null) {
                 record.weight = weight
                 repository.insertOrUpdate(record)
+                _currentWeight.value = weight // Update current weight
                 fetchAllEntries() // Ensure weightHistory and other data are updated
             } else {
                 Log.e("TrackerViewModel", "No record found for date: $date")
@@ -125,4 +159,15 @@ class TrackerViewModel @Inject constructor(private val repository: TrackerReposi
             }
         }
     }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getCurrentWeight() {
+        viewModelScope.launch {
+            val today = LocalDate.now() // Get today's date
+            val record = repository.getEntryByDate(today) // Fetch the record for today
+            _currentWeight.value = record?.weight // Update current weight LiveData
+        }
+    }
+
 }
+

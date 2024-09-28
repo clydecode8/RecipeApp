@@ -3,6 +3,8 @@ package com.example.assignme
 import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -34,7 +36,9 @@ import com.example.assignme.GUI.AccountProfile.RecipeApproveScreen
 import com.example.assignme.GUI.AccountProfile.RegisterPage
 import com.example.assignme.GUI.AccountProfile.SocialFeedScreen
 import com.example.assignme.GUI.Community.SocialAppUI
+import com.example.assignme.GUI.DailyTracker.BarChart
 import com.example.assignme.GUI.DailyTracker.DailyAnalysis
+import com.example.assignme.GUI.DailyTracker.LineChart
 import com.example.assignme.GUI.DailyTracker.SetUpInfo
 import com.example.assignme.GUI.DailyTracker.TrackerPage
 import com.example.assignme.GUI.DailyTracker.Transformation
@@ -207,6 +211,16 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         composable("transformation_page") {
             val trackerViewModel: TrackerViewModel = hiltViewModel()
             Transformation(navController, userViewModel, trackerViewModel)
+        }
+
+        composable("lineChart_page") {
+            val trackerViewModel: TrackerViewModel = hiltViewModel()
+            LineChart(navController, userViewModel, trackerViewModel)
+        }
+
+        composable("barChart_page") {
+            val trackerViewModel: TrackerViewModel = hiltViewModel()
+            BarChart(navController, userViewModel, trackerViewModel)
         }
 
         composable("manageReportPost"){

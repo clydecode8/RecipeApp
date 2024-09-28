@@ -377,140 +377,180 @@ fun CaloriesIntakeRing(
         trackerViewModel.addCalories(currentDate, 0f) // Ensures calories data is initialized for today
     }
 
-    // Observe the calorie intake value and history from the ViewModel
+    // Observe the calorie intake and goal from the ViewModel
     val caloriesIntake by trackerViewModel.calorieHistory.observeAsState(emptyList())
     val currentCalories = caloriesIntake.firstOrNull { it.date == currentDate }?.caloriesIntake ?: 0f
-
-    // Default calorie goal, which can be updated by the user
-    var calorieGoal by remember { mutableStateOf(2000) }
+    val calorieGoal by trackerViewModel.calorieGoal.observeAsState(null)
     var newGoalText by remember { mutableStateOf("") }
+    var isEditingGoal by remember { mutableStateOf(false) } // Track if user is editing the goal
 
-    val percentage = (currentCalories / calorieGoal.toFloat()).coerceIn(0f, 1f)
+    val percentage = (currentCalories / (calorieGoal?.toFloat() ?: 1f)).coerceIn(0f, 1f)
     val ringThickness = 20.dp
     val ringSize = 120.dp
 
     val commonHeight = 56.dp
 
-    Log.d("CaloriesIntakeRing", "Calories Intake: $currentCalories kcal, Goal: $calorieGoal kcal, Percentage: ${(percentage * 100).toInt()}%")
-
-    // Row to split the layout: Ring on the left, progress on the right
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Left: Ring display
-        Box(
-            modifier = Modifier
-                .size(ringSize)
-                .padding(8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val sweepAngle = 360f * percentage
-
-                // Background Arc - White
-                drawArc(
-                    color = Color.White,
-                    startAngle = -90f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    style = Stroke(width = ringThickness.toPx(), cap = StrokeCap.Round)
-                )
-
-                // Foreground Arc - Yellow Orange
-                drawArc(
-                    color = Color(0xFFFFA500), // Yellow orange color
-                    startAngle = -90f,
-                    sweepAngle = sweepAngle,
-                    useCenter = false,
-                    style = Stroke(width = ringThickness.toPx(), cap = StrokeCap.Round)
-                )
-            }
-
-            // Display percentage in the center with the same color as the arc
-            Text(
-                text = "${(percentage * 100).toInt()}%",
-                style = androidx.compose.ui.text.TextStyle(fontSize = textSize, fontWeight = FontWeight.Bold),
-                color = Color(0xFFFFA500) // Match arc color
-            )
-        }
-
-        Spacer(modifier = Modifier.width(16.dp)) // Space between ring and text content
-
-        // Right: Title, progress, achievement status
+    // Only show the calorie goal input field and button if there is no goal set
+    if (calorieGoal == null) {
+        // Prompt the user to set a calorie goal
         Column(
-            horizontalAlignment = Alignment.Start,
-            modifier = Modifier.padding(start = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Title: Calories Goal
             Text(
-                text = "Calories Goal",
-                style = TextStyle(fontSize = textSize * 0.8f, fontWeight = FontWeight.Bold),
-                color = Color.Black,
-                modifier = Modifier.padding(bottom = 8.dp)
+                text = "Set Your Calorie Goal",
+                style = TextStyle(fontSize = textSize, fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Calories progress
-            Text(
-                text = "${currentCalories.toInt()} kcal / ${calorieGoal} kcal",
-                style = TextStyle(fontSize = textSize * 0.7f),
-                color = Color.Black,
-                modifier = Modifier.padding(bottom = 8.dp)
+            // Input field for setting a new calorie goal
+            OutlinedTextField(
+                value = newGoalText,
+                onValueChange = { newGoalText = it },
+                label = { Text("Enter Calorie Goal") },
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
             )
 
-            // Achieved or Not Achieved
-            if (percentage >= 1f) {
-                Text(
-                    text = "Achieved",
-                    style = TextStyle(fontSize = textSize * 0.7f, fontWeight = FontWeight.Bold, color = Color.Green),
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            } else {
-                Text(
-                    text = "Not Achieved",
-                    style = TextStyle(fontSize = textSize * 0.7f, fontWeight = FontWeight.Bold, color = Color.Red),
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+            // Button to set the goal
+            Button(
+                onClick = {
+                    newGoalText.toIntOrNull()?.let { newGoal ->
+                        trackerViewModel.setCalorieGoal(newGoal) // Save the goal in ViewModel and SharedPreferences
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E))
+            ) {
+                Text(text = "Set Goal")
             }
         }
-    }
-
-    Spacer(modifier = Modifier.height(16.dp)) // Space before the new row for the goal input
-
-    // New Row for the goal input and button
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        OutlinedTextField(
-            value = newGoalText,
-            onValueChange = { newGoalText = it },
-            label = { Text("Set New Calorie") },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+    } else {
+        // Show the calorie ring and progress when the goal is set
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp)
-        )
-
-        Button(
-            onClick = {
-                newGoalText.toIntOrNull()?.let { newGoal ->
-                    calorieGoal = newGoal
-                }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)), // Set button color
-            modifier = Modifier
-                .height(commonHeight) // Set the same height as the text field
-                .padding(top = 8.dp) // Adjust top padding
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Set Goal")
+            // Left: Ring display
+            Box(
+                modifier = Modifier
+                    .size(ringSize)
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val sweepAngle = 360f * percentage
+
+                    // Background Arc - White
+                    drawArc(
+                        color = Color.White,
+                        startAngle = -90f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        style = Stroke(width = ringThickness.toPx(), cap = StrokeCap.Round)
+                    )
+
+                    // Foreground Arc - Yellow Orange
+                    drawArc(
+                        color = Color(0xFFFFA500), // Yellow orange color
+                        startAngle = -90f,
+                        sweepAngle = sweepAngle,
+                        useCenter = false,
+                        style = Stroke(width = ringThickness.toPx(), cap = StrokeCap.Round)
+                    )
+                }
+
+                // Display percentage in the center with the same color as the arc
+                Text(
+                    text = "${(percentage * 100).toInt()}%",
+                    style = androidx.compose.ui.text.TextStyle(fontSize = textSize, fontWeight = FontWeight.Bold),
+                    color = Color(0xFFFFA500) // Match arc color
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp)) // Space between ring and text content
+
+            // Right: Title, progress, achievement status
+            Column(
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                // Title: Calories Goal
+                Text(
+                    text = "Calories Goal",
+                    style = TextStyle(fontSize = textSize * 0.8f, fontWeight = FontWeight.Bold),
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                // Calories progress
+                Text(
+                    text = "${currentCalories.toInt()} kcal / ${calorieGoal} kcal",
+                    style = TextStyle(fontSize = textSize * 0.7f),
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                // Achieved or Not Achieved
+                if (percentage >= 1f) {
+                    Text(
+                        text = "Achieved",
+                        style = TextStyle(fontSize = textSize * 0.7f, fontWeight = FontWeight.Bold, color = Color.Green),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                } else {
+                    Text(
+                        text = "Not Achieved",
+                        style = TextStyle(fontSize = textSize * 0.7f, fontWeight = FontWeight.Bold, color = Color.Red),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // "Edit Goal" button and text box to modify the calorie goal
+                if (isEditingGoal) {
+                    OutlinedTextField(
+                        value = newGoalText,
+                        onValueChange = { newGoalText = it },
+                        label = { Text("Edit Calorie Goal") },
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                    )
+
+                    Button(
+                        onClick = {
+                            newGoalText.toIntOrNull()?.let { newGoal ->
+                                trackerViewModel.setCalorieGoal(newGoal) // Update the goal and save to preferences
+                                isEditingGoal = false // Stop editing after saving
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E))
+                    ) {
+                        Text(text = "Save Goal")
+                    }
+                } else {
+                    Button(
+                        onClick = {
+                            isEditingGoal = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E))
+                    ) {
+                        Text(text = "Edit Goal")
+                    }
+                }
+            }
         }
     }
 }
+
 
 
 
