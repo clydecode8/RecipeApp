@@ -34,7 +34,7 @@ fun SetUpInfo(
     var weight by remember { mutableStateOf("") }
     var height by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var isLoading by remember { mutableStateOf(false) } // Track loading state
+    var isLoading by remember { mutableStateOf(false) }
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -43,7 +43,7 @@ fun SetUpInfo(
     }
 
     val context = LocalContext.current
-    val userId by userViewModel.userId.observeAsState() // Observing the user ID from the UserViewModel
+    val userId by userViewModel.userId.observeAsState()
 
     Box(
         modifier = Modifier
@@ -53,7 +53,7 @@ fun SetUpInfo(
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top // Content at the top
+            verticalArrangement = Arrangement.Top
         ) {
             item {
                 Spacer(modifier = Modifier.height(50.dp))
@@ -108,7 +108,7 @@ fun SetUpInfo(
                         contentDescription = "Uploaded Image",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp) // Smaller height for preview image
+                            .height(300.dp)
                     )
                 }
 
@@ -117,14 +117,11 @@ fun SetUpInfo(
                 Button(
                     onClick = {
                         if (!isLoading) {
-                            isLoading = true // Set loading state
-
-                            // Ensure userId is not null and image is uploaded
+                            isLoading = true
                             if (weight.isNotBlank() && height.isNotBlank() && imageUri != null && userId != null) {
                                 val weightValue = weight.toFloatOrNull()
                                 val heightValue = height.toFloatOrNull()
 
-                                // Validate weight and height values
                                 if (weightValue != null && heightValue != null && weightValue > 0 && heightValue > 0) {
                                     userViewModel.saveUserData(
                                         weight = weightValue.toString(),
@@ -155,7 +152,7 @@ fun SetUpInfo(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
                 ) {
                     if (isLoading) {
-                        CircularProgressIndicator(color = Color.White) // Show loading indicator
+                        CircularProgressIndicator(color = Color.White)
                     } else {
                         Text("Continue Journey")
                     }
@@ -165,7 +162,6 @@ fun SetUpInfo(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InputField(label: String, value: String, onValueChange: (String) -> Unit, keyboardType: KeyboardType) {
     Column {

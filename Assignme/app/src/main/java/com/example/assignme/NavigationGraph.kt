@@ -3,14 +3,13 @@ package com.example.assignme
 import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -19,7 +18,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.assignme.DataClass.Recipes
 import com.example.assignme.GUI.AccountProfile.AddAdmin
 import com.example.assignme.GUI.AccountProfile.AdminDashboard
 import com.example.assignme.GUI.AccountProfile.AppFirstPage
@@ -33,7 +31,9 @@ import com.example.assignme.GUI.AccountProfile.RecipeApproveScreen
 import com.example.assignme.GUI.AccountProfile.RegisterPage
 import com.example.assignme.GUI.AccountProfile.SocialFeedScreen
 import com.example.assignme.GUI.Community.SocialAppUI
+import com.example.assignme.GUI.DailyTracker.BarChart
 import com.example.assignme.GUI.DailyTracker.DailyAnalysis
+import com.example.assignme.GUI.DailyTracker.LineChart
 import com.example.assignme.GUI.DailyTracker.SetUpInfo
 import com.example.assignme.GUI.DailyTracker.TrackerPage
 import com.example.assignme.GUI.DailyTracker.Transformation
@@ -204,7 +204,18 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
 
         composable("transformation_page") {
             val trackerViewModel: TrackerViewModel = hiltViewModel()
+            // Pass the image picker launcher to the Transformation composable
             Transformation(navController, userViewModel, trackerViewModel)
+        }
+
+        composable("lineChart_page") {
+            val trackerViewModel: TrackerViewModel = hiltViewModel()
+            LineChart(navController, userViewModel, trackerViewModel)
+        }
+
+        composable("barChart_page") {
+            val trackerViewModel: TrackerViewModel = hiltViewModel()
+            BarChart(navController, userViewModel, trackerViewModel)
         }
 
         composable("manageReportPost"){
@@ -212,5 +223,5 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         }
     }
 
-}
 
+}
