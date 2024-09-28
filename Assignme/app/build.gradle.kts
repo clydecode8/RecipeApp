@@ -55,6 +55,9 @@ android {
 }
 
 dependencies {
+    implementation ("com.google.android.exoplayer:exoplayer-core:2.19.1")
+    implementation ("com.google.android.exoplayer:exoplayer-ui:2.19.1")
+
     val vicoVersion = "1.6.5"
     implementation("com.patrykandpatrick.vico:core:$vicoVersion")
     implementation("com.patrykandpatrick.vico:compose:$vicoVersion")

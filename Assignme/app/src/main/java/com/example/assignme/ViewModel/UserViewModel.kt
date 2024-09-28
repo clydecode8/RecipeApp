@@ -166,7 +166,6 @@ class UserViewModel : ViewModel(), UserProfileProvider {
     }
 
 
-
     private fun fetchUpdatedPost(postId: String) {
         val db = FirebaseFirestore.getInstance()
         db.collection("posts").document(postId)
@@ -236,29 +235,30 @@ class UserViewModel : ViewModel(), UserProfileProvider {
     }
 
 
-    fun addPost(content: String, imageUri: Uri?) {
-        if (imageUri != null) {
-            val storageRef =
-                FirebaseStorage.getInstance().reference.child("images/${UUID.randomUUID()}")
-            storageRef.putFile(imageUri)
+    fun addPost(content: String, mediaUri: Uri?, mediaType: String) {
+        if (mediaUri != null) {
+            val storageRef = FirebaseStorage.getInstance().reference.child("media/${UUID.randomUUID()}")
+            storageRef.putFile(mediaUri)
                 .addOnSuccessListener {
                     storageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
                         val post = Post(
                             userId = _userId.value ?: "",
                             content = content,
-                            imagePath = downloadUrl.toString()
+                            imagePath = if (mediaType == "image") downloadUrl.toString() else null,
+                            videoPath = if (mediaType == "video") downloadUrl.toString() else null,
+                            mediaType = mediaType
                         )
                         savePostToFirestore(post)
                     }
                         .addOnFailureListener { e ->
-                            Log.w("UserViewModel", "Error uploading image", e)
+                            Log.w("UserViewModel", "Error uploading media", e)
                         }
                 }
                 .addOnFailureListener { e ->
-                    Log.w("UserViewModel", "Error uploading image", e)
+                    Log.w("UserViewModel", "Error uploading media", e)
                 }
         } else {
-            val post = Post(userId = _userId.value ?: "", content = content, imagePath = null)
+            val post = Post(userId = _userId.value ?: "", content = content)
             savePostToFirestore(post)
         }
     }
@@ -525,6 +525,8 @@ data class Post(
     val userId: String = "",
     val content: String = "",
     val imagePath: String? = null,
+    val videoPath: String? = null,
+    val mediaType: String? = null, // "image" or "video"
     val likes: Int = 0,
     val likedUsers: List<String> = emptyList(), // 存储点赞用户的 ID
     val comments: Int = 0,

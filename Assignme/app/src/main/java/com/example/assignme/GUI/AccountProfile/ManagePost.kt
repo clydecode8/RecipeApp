@@ -1,5 +1,6 @@
 package com.example.assignme.GUI.AccountProfile
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import com.example.assignme.AndroidBar.AppTopBar
+import com.example.assignme.GUI.Community.VideoPlayer
 import com.example.assignme.R
 import com.example.assignme.ViewModel.Post
 import com.example.assignme.ViewModel.UserViewModel
@@ -129,6 +131,16 @@ fun PostItem(
                         .height(200.dp)
                         .clip(RoundedCornerShape(8.dp)),
                     contentScale = ContentScale.Crop
+                )
+            }
+            // Post Video (if available)
+            post.videoPath?.let { videoUrl ->
+                Spacer(modifier = Modifier.height(8.dp))
+                VideoPlayer(
+                    videoUri = Uri.parse(videoUrl),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
                 )
             }
 

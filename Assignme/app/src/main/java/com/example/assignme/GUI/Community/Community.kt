@@ -1,6 +1,8 @@
 package com.example.assignme.GUI.Community
 
 import android.net.Uri
+import android.widget.FrameLayout
+import android.widget.ListPopupWindow.MATCH_PARENT
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -30,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -40,10 +43,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
@@ -55,6 +61,14 @@ import com.example.assignme.R
 import com.example.assignme.ViewModel.Comment
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserViewModel
+import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.source.ProgressiveMediaSource
+import com.google.android.exoplayer2.ui.PlayerView
+import com.google.android.exoplayer2.upstream.DataSource
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
+import com.google.android.exoplayer2.util.Util
+import com.google.android.exoplayer2.MediaItem
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -187,15 +201,25 @@ fun ExpandedLayout(
 
 @Composable
 fun PostComposer(userViewModel: UserViewModel) {
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedMediaUri by remember { mutableStateOf<Uri?>(null) }
     var postText by remember { mutableStateOf("") }
+    var mediaType by remember { mutableStateOf<String?>(null) }
     val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
     val profilePictureUrl = userProfile.profilePictureUrl
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
-            selectedImageUri = uri
+            selectedMediaUri = uri
+            mediaType = "image"
+        }
+    )
+
+    val videoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            selectedMediaUri = uri
+            mediaType = "video"
         }
     )
 
@@ -222,14 +246,7 @@ fun PostComposer(userViewModel: UserViewModel) {
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 8.dp),
-                placeholder = { Text("What's on your mind?") },
-//                colors = TextFieldDefaults.textFieldColors(
-//                    textColor = MaterialTheme.colors.onSurface,
-//                    cursorColor = Color(0xFFE23E3E),
-//                    focusedIndicatorColor = Color(0xFFE23E3E),
-//                    unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-//                    placeholderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
-//                )
+                placeholder = { Text("What's on your mind?") }
             )
 
             IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
@@ -239,30 +256,48 @@ fun PostComposer(userViewModel: UserViewModel) {
                     modifier = Modifier.size(30.dp)
                 )
             }
+
+            IconButton(onClick = { videoPickerLauncher.launch("video/*") }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.addvideo),
+                    contentDescription = "Add video",
+                    modifier = Modifier.size(30.dp)
+                )
+            }
         }
 
-        if (selectedImageUri != null) {
-            Image(
-                painter = rememberImagePainter(selectedImageUri),
-                contentDescription = "Selected image",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .padding(top = 8.dp)
-                    .background(Color.Gray),
-                contentScale = ContentScale.Crop
-            )
+        if (selectedMediaUri != null) {
+            when (mediaType) {
+                "image" -> Image(
+                    painter = rememberImagePainter(selectedMediaUri),
+                    contentDescription = "Selected image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .padding(top = 8.dp)
+                        .background(Color.Gray),
+                    contentScale = ContentScale.Crop
+                )
+                "video" -> VideoPlayer(
+                    videoUri = selectedMediaUri!!,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .padding(top = 8.dp)
+                )
+            }
         }
 
         Button(
             onClick = {
-                selectedImageUri?.let { uri ->
-                    userViewModel.addPost(postText, uri) // 上传图片
-                    postText = ""  // 清空文本框
-                    selectedImageUri = null  // 清空选择的图片
+                selectedMediaUri?.let { uri ->
+                    userViewModel.addPost(postText, uri, mediaType ?: "")
+                    postText = ""
+                    selectedMediaUri = null
+                    mediaType = null
                 } ?: run {
-                    userViewModel.addPost(postText, null) // 没有选择图片
-                    postText = ""  // 清空文本框
+                    userViewModel.addPost(postText, null, "")
+                    postText = ""
                 }
             },
             enabled = postText.isNotEmpty(),
@@ -270,13 +305,42 @@ fun PostComposer(userViewModel: UserViewModel) {
                 .align(Alignment.End)
                 .padding(top = 8.dp),
             colors = ButtonDefaults.buttonColors(
-                backgroundColor = Color(0xFFE23E3E), // 按钮背景颜色
-                disabledBackgroundColor = Color(0xFFEA5959), // 按钮禁用时的背景颜色
-                contentColor = Color.White, // 按钮文本颜色
-                disabledContentColor = Color.White.copy(alpha = 0.7f) // 按钮禁用时的文本颜色
+                backgroundColor = Color(0xFFE23E3E),
+                disabledBackgroundColor = Color(0xFFEA5959),
+                contentColor = Color.White,
+                disabledContentColor = Color.White.copy(alpha = 0.7f)
             )
         ) {
             Text("Post")
+        }
+    }
+}
+
+@Composable
+fun VideoPlayer(videoUri: Uri, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+
+    val exoPlayer = remember {
+        SimpleExoPlayer.Builder(context).build().apply {
+            val mediaItem = MediaItem.fromUri(videoUri)  // Create a MediaItem from the Uri
+            setMediaItem(mediaItem)  // Set the media item
+            prepare()  // Prepare the player
+        }
+    }
+
+    DisposableEffect(
+        AndroidView(
+            factory = {
+                PlayerView(context).apply {
+                    player = exoPlayer
+                    layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+                }
+            },
+            modifier = modifier
+        )
+    ) {
+        onDispose {
+            exoPlayer.release()  // Release the player on dispose
         }
     }
 }
@@ -291,6 +355,8 @@ fun PostItem(
     postId: String,
     userViewModel: UserViewModel,
     imagePath: String? = null,
+    videoPath: String? = null,
+    mediaType: String? = null,
     likedUsers: List<String>,
     timestamp: Long,
     isMyPost: Boolean
@@ -305,6 +371,7 @@ fun PostItem(
     var editedContent by remember { mutableStateOf(content) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
+    var showFullscreenVideo by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -370,17 +437,39 @@ fun PostItem(
             // Post content
             Text(text = content, modifier = Modifier.padding(vertical = 8.dp))
 
-            // Post Image (if available)
-            imagePath?.let { imageUrl ->
-                Image(
-                    painter = rememberImagePainter(data = imageUrl),
-                    contentDescription = "Post image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clickable { showImageDialog = true },
-                    contentScale = ContentScale.Crop
-                )
+            // Post Media (Image or Video)
+            when (mediaType) {
+                "image" -> imagePath?.let { imageUrl ->
+                    Image(
+                        painter = rememberImagePainter(data = imageUrl),
+                        contentDescription = "Post image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clickable { showImageDialog = true },
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                "video" -> videoPath?.let { videoUrl ->
+                    Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+                        VideoPlayer(
+                            videoUri = Uri.parse(videoUrl),
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        IconButton(
+                            onClick = { showFullscreenVideo = true },
+                            modifier = Modifier.align(Alignment.Center)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.fullscreen), // Replace with your drawable name
+                                contentDescription = "Fullscreen",
+                                modifier = Modifier.size(24.dp)
+                                    .graphicsLayer(alpha = 0.5f), // Adjust size as needed
+                                tint = Color.White
+                            )
+                        }
+                    }
+                }
             }
 
             // Like and comment buttons
@@ -425,6 +514,14 @@ fun PostItem(
                 )
             }
         }
+    }
+
+    // 全屏视频对话框
+    if (showFullscreenVideo && videoPath != null) {
+        FullscreenVideoDialog(
+            videoUri = Uri.parse(videoPath),
+            onDismiss = { showFullscreenVideo = false }
+        )
     }
 
     // Image Dialog
@@ -474,6 +571,21 @@ fun PostItem(
             },
             reportedBy = currentUserId // 传递当前用户 ID
         )
+    }
+}
+
+@Composable
+fun FullscreenVideoDialog(videoUri: Uri, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            VideoPlayer(videoUri = videoUri, modifier = Modifier.fillMaxSize())
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+            }
+        }
     }
 }
 
@@ -717,7 +829,7 @@ fun PostList(userViewModel: UserViewModel) {
                 Text("No posts available", modifier = Modifier.padding(16.dp))
             }
         } else {
-            items(posts.reversed(),key = { it.id }) { post ->
+            items(posts.reversed(), key = { it.id }) { post ->
                 val author = users[post.userId]
                 val authorName = author?.name ?: "User"
                 val authorImageUrl = author?.profilePictureUrl ?: R.drawable.profile.toString()
@@ -727,12 +839,14 @@ fun PostList(userViewModel: UserViewModel) {
                     authorImageUrl = authorImageUrl,
                     content = post.content,
                     imagePath = post.imagePath,
+                    videoPath = post.videoPath, // 新增视频路径参数
+                    mediaType = post.mediaType, // 新增媒体类型参数
                     likes = post.likes,
                     comments = post.comments,
                     postId = post.id,
                     userViewModel = userViewModel,
                     likedUsers = post.likedUsers,
-                    timestamp = post.timestamp, // 确保传递时间戳
+                    timestamp = post.timestamp,
                     isMyPost = false // 这是公共帖子
                 )
             }
@@ -764,12 +878,14 @@ fun MyPostList(userViewModel: UserViewModel) {
                     authorImageUrl = authorImageUrl,
                     content = post.content,
                     imagePath = post.imagePath,
+                    videoPath = post.videoPath, // 新增视频路径参数
+                    mediaType = post.mediaType, // 新增媒体类型参数
                     likes = post.likes,
                     comments = post.comments,
                     postId = post.id,
                     userViewModel = userViewModel,
                     likedUsers = post.likedUsers,
-                    timestamp = post.timestamp, // 确保传递时间戳
+                    timestamp = post.timestamp,
                     isMyPost = true // 这是用户的帖子
                 )
             }
