@@ -1,5 +1,6 @@
 package com.example.assignme.GUI.Recipe
 
+import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,6 +31,8 @@ import coil.compose.rememberImagePainter
 import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.AndroidBar.AppTopBar
 import com.example.assignme.DataClass.Recipes
+import com.example.assignme.DataClass.WindowInfo
+import com.example.assignme.DataClass.rememberWidowInfo
 import com.example.assignme.R
 import com.example.assignme.ViewModel.RecipeViewModel
 import com.example.assignme.ViewModel.UserProfile
@@ -37,6 +41,7 @@ import com.example.assignme.ViewModel.UserViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeMainPage(navController: NavController, viewModel: RecipeViewModel = viewModel(), userModel: UserViewModel) {
+    val windowInfo = rememberWidowInfo()
     val recipes by viewModel.filteredRecipes.collectAsState()
     val categories by viewModel.categories.collectAsState()
     var selectedCategory by remember { mutableStateOf("") }
@@ -50,12 +55,18 @@ fun RecipeMainPage(navController: NavController, viewModel: RecipeViewModel = vi
         topBar = { AppTopBar(title = "Recipes", navController = navController) },
         bottomBar = { AppBottomNavigation(navController = navController) }
     ) { paddingValues ->
-        // Make the entire page scrollable vertically
+        // Determine layout based on screen size
+        val verticalSpacing = when (windowInfo.screenWidthInfo) {
+            WindowInfo.WindowType.Compact -> 8.dp
+            WindowInfo.WindowType.Medium -> 16.dp
+            WindowInfo.WindowType.Expanded -> 24.dp
+        }
+
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
             contentPadding = PaddingValues(16.dp)
         ) {
             item {
@@ -63,17 +74,13 @@ fun RecipeMainPage(navController: NavController, viewModel: RecipeViewModel = vi
             }
 
             item {
-
-                // Search bar: Click to navigate to the search page
                 SearchBar2(onSearch = { navController.navigate("search_results") })
             }
 
             item {
-                // Horizontal scrolling for recipes
                 if (recipes.isNotEmpty()) {
-                    TrendingSection(recipes = recipes, navController = navController)
-                }else {
-                    // If no recipes are found
+                    TrendingSection(recipes = recipes, navController = navController, windowInfo = windowInfo)
+                } else {
                     Text(
                         text = "No recipes found",
                         style = MaterialTheme.typography.bodyLarge,
@@ -91,12 +98,12 @@ fun RecipeMainPage(navController: NavController, viewModel: RecipeViewModel = vi
                     PopularCategorySection(
                         categories = categories,
                         selectedCategory = selectedCategory,
-                        onCategorySelected = { selectedCategory = it }
+                        onCategorySelected = { selectedCategory = it },
+                        windowInfo = windowInfo
                     )
                 }
             }
 
-            // Display filtered recipes by category
             if (selectedCategory.isNotEmpty()) {
                 val filteredRecipes = recipes.filter { it.category == selectedCategory }
                 item {
@@ -185,16 +192,28 @@ fun SearchBar2(
 
 
 @Composable
-fun TrendingSection(recipes: List<Recipes>, navController: NavController) {
+fun TrendingSection(recipes: List<Recipes>, navController: NavController, windowInfo: WindowInfo) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val recipeCardSize = when (windowInfo.screenWidthInfo) {
+        WindowInfo.WindowType.Compact -> 120.dp
+        WindowInfo.WindowType.Medium -> 160.dp
+        WindowInfo.WindowType.Expanded -> 200.dp
+    }
     val authorId = "LivBmlpHsfetYgJ99iCGHEUvb8V2"
     val authorRecipes = remember { recipes.filter { it.authorId == authorId } }
 
     val shuffledRecipes = remember { authorRecipes.shuffled() }  // Shuffle recipes for randomness
-
+    val recipeCount = if (isLandscape &&
+        (windowInfo.screenWidthInfo == WindowInfo.WindowType.Medium ||
+                windowInfo.screenWidthInfo == WindowInfo.WindowType.Expanded)) {
+        7
+    } else {
+        5
+    }
     Column(
         modifier = Modifier.padding(vertical = 16.dp)
     ) {
-        // Header row for Trending
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -207,40 +226,40 @@ fun TrendingSection(recipes: List<Recipes>, navController: NavController) {
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
-            TextButton(onClick = {
-                navController.navigate("search_results")
-            }) {
+            TextButton(onClick = { navController.navigate("search_results") }) {
                 Text("See all")
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Horizontal scrolling for trending recipes
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Display the shuffled recipes
-            items(shuffledRecipes.take(5)) { recipe ->
-                // Each recipe card in Trending
-                RecipeCard(recipe = recipe, onClick = {
-                    navController.navigate("recipe_detail_page/${recipe.id}")
-                })
+            items(shuffledRecipes.take(recipeCount)) { recipe ->
+                Box(modifier = Modifier.size(recipeCardSize)) {
+                    RecipeCard(recipe = recipe, onClick = {
+                        navController.navigate("recipe_detail_page/${recipe.id}")
+                    })
+                }
             }
         }
     }
 }
 
-
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PopularCategorySection(
     categories: List<String>,
     selectedCategory: String,
-    onCategorySelected: (String) -> Unit
+    onCategorySelected: (String) -> Unit,
+    windowInfo: WindowInfo
 ) {
+    val chipPadding = when (windowInfo.screenWidthInfo) {
+        WindowInfo.WindowType.Compact -> 4.dp
+        WindowInfo.WindowType.Medium -> 8.dp
+        WindowInfo.WindowType.Expanded -> 12.dp
+    }
 
     Column {
         Text(
@@ -255,7 +274,7 @@ fun PopularCategorySection(
                     onClick = { onCategorySelected(category) },
                     label = { Text(category) },
                     selected = category == selectedCategory,
-                    modifier = Modifier.padding(end = 8.dp)
+                    modifier = Modifier.padding(end = chipPadding)
                 )
             }
         }

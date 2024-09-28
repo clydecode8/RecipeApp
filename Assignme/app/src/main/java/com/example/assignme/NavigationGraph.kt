@@ -9,7 +9,10 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -18,6 +21,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.assignme.DataClass.Recipes
+import com.example.assignme.DataClass.rememberWidowInfo
 import com.example.assignme.GUI.AccountProfile.AddAdmin
 import com.example.assignme.GUI.AccountProfile.AdminDashboard
 import com.example.assignme.GUI.AccountProfile.AppFirstPage
@@ -174,7 +179,8 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         composable("my_recipe_page") { backStackEntry ->
             val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("recipe_main_page") }
             val viewModel: RecipeViewModel = viewModel(parentEntry)
-            MyRecipe(navController = navController, viewModel = viewModel, userViewModel,)
+            val windowInfo = rememberWidowInfo()
+            MyRecipe(navController = navController, viewModel = viewModel, userViewModel, windowInfo )
         }
 
         composable("schedule_page"){backStackEntry ->
@@ -204,7 +210,6 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
 
         composable("transformation_page") {
             val trackerViewModel: TrackerViewModel = hiltViewModel()
-            // Pass the image picker launcher to the Transformation composable
             Transformation(navController, userViewModel, trackerViewModel)
         }
 
@@ -223,5 +228,5 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         }
     }
 
-
 }
+

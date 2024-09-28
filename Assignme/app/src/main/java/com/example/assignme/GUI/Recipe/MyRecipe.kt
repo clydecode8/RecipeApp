@@ -14,26 +14,32 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.AndroidBar.AppTopBar
+import com.example.assignme.DataClass.WindowInfo
 import com.example.assignme.ViewModel.RecipeViewModel
 import com.example.assignme.ViewModel.UserViewModel
 import kotlinx.coroutines.FlowPreview
 
 @OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
-fun MyRecipe(navController: NavController, viewModel: RecipeViewModel = viewModel(), userModel: UserViewModel) {
-    val filteredRecipes  by viewModel.filteredRecipes.collectAsState()
+fun MyRecipe(
+    navController: NavController,
+    viewModel: RecipeViewModel = viewModel(),
+    userModel: UserViewModel,
+    windowInfo: WindowInfo
+) {
+    val filteredRecipes by viewModel.filteredRecipes.collectAsState()
     val userId by userModel.userId.observeAsState()
     var searchQuery by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
         userId?.let { id ->
             viewModel.loadUserRecipes(id) // Load only recipes with authorId == userId
         }
     }
-    Scaffold(
 
+    Scaffold(
         topBar = { AppTopBar(title = "My recipes", navController = navController) },
         bottomBar = { AppBottomNavigation(navController = navController) }
-
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -41,7 +47,7 @@ fun MyRecipe(navController: NavController, viewModel: RecipeViewModel = viewMode
                 .fillMaxSize(),
         ) {
 
-            // 与主页一致的搜索栏
+            // 搜索栏
             SearchBar(
                 searchQuery = searchQuery,
                 onSearchQueryChange = {
@@ -51,10 +57,16 @@ fun MyRecipe(navController: NavController, viewModel: RecipeViewModel = viewMode
                 onSearch = { viewModel.searchRecipes(searchQuery) }
             )
 
+            // 根据屏幕大小设置网格列数
+            val columns = when (windowInfo.screenWidthInfo) {
+                WindowInfo.WindowType.Compact -> 2  // 小屏幕显示2列
+                WindowInfo.WindowType.Medium -> 3  // 中等屏幕显示3列
+                WindowInfo.WindowType.Expanded -> 4  // 大屏幕显示4列
+            }
 
             if (filteredRecipes.isNotEmpty()) {
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Fixed(columns), // 动态设置列数
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(16.dp),
