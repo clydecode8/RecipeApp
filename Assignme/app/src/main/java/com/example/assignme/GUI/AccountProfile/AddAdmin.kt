@@ -131,7 +131,6 @@ fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
             .safeContentPadding()
             .statusBarsPadding()
     ) {

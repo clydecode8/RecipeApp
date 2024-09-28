@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Activity.RESULT_OK
 import android.content.Context
 import android.util.Log
+import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -33,6 +34,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.darkColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
@@ -63,6 +65,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -105,6 +109,10 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
     val pageCount = 2
     val pagerState = rememberPagerState { pageCount }
 
+    var usernameError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+    var confirmPasswordError by remember { mutableStateOf<String?>(null) }
 
     // Initialize GoogleAuthUiClient
     val context = LocalContext.current
@@ -167,6 +175,19 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
     }
 
     fun handleRegistration() {
+        // Validate inputs
+        val usernameError = validateUsername(username)
+        val emailError = validateEmail(email)
+        val passwordError = validatePassword(password)
+        val confirmPasswordError = validateConfirmPassword(password, confirmpassword)
+
+        // Check for any errors
+        if (usernameError != null || emailError != null || passwordError != null || confirmPasswordError != null) {
+
+            return
+        }
+
+        // Proceed with registration if there are no errors
         submitRegistration(
             name = username,
             email = email,
@@ -187,6 +208,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
             }
         )
     }
+
 
     fun handlePhoneRegistration() {
         submitRegistration(
@@ -224,7 +246,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .safeContentPadding()
         ) {
 
             // Define variables to hold screen width and height
@@ -234,9 +256,8 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(start = 16.dp, end = 16.dp, top = (screenHeight * 0.05f).dp)
-                    .padding(bottom = 70.dp), // Padding to make space for the buttons
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.Start // Ensure correct alignment is used
             ) {
                 item {
@@ -274,7 +295,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                         pageSize = PageSize.Fill,
                         modifier = Modifier
                             .fillMaxWidth() // Ensure the pager fills the width
-                            .height(300.dp) // Fixed height to avoid resizing
+                            .height(385.dp) // Fixed height to avoid resizing
                     ) { page ->
                         when (page) {
                             0 -> EmailRegistration(
@@ -286,7 +307,28 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                                 onEmailChange = { email = it },
                                 onPasswordChange = { password = it },
                                 onConfirmpasswordChange = { confirmpassword = it },
-                                onRegister = { handleRegistration() }
+                                onRegister = {
+                                    // Validate fields and set error messages
+                                    usernameError = validateUsername(username)
+                                    emailError = validateEmail(email)
+                                    passwordError = validatePassword(password)
+                                    confirmPasswordError = validateConfirmPassword(password, confirmpassword)
+
+                                    // Check if there are any errors
+                                    if (usernameError == null && emailError == null && passwordError == null && confirmPasswordError == null) {
+                                        // No errors, proceed to registration
+                                        handleRegistration()
+                                    }
+                                    // If there are errors, they will already be set and displayed in the UI
+                                },
+                                usernameError = usernameError,
+                                emailError = emailError,
+                                passwordError = passwordError,
+                                confirmPasswordError = confirmPasswordError,
+                                setUsernameError = { usernameError = it },
+                                setEmailError = { emailError = it },
+                                setPasswordError = { passwordError = it },
+                                setConfirmPasswordError = { confirmPasswordError = it }
                             )
                             1 -> PhoneRegistration(
                                 phoneNumber = phoneNumber,
@@ -362,24 +404,25 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                             .padding(horizontal = 16.dp, vertical = 16.dp)
                             .align(Alignment.BottomCenter) // Keep the button fixed at the bottom
                     ) {
-                        Button(
-                            onClick = {
-                                // Check the current page and call the respective registration function
-                                if (pagerState.currentPage == 0) {
-                                    handleRegistration() // Email registration
-                                } else if (pagerState.currentPage == 1) {
-                                    handlePhoneRegistration() // Phone registration
-                                }
-                            },
-                            modifier = Modifier
-                                .height(54.dp)
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text(text = "Register", fontWeight = FontWeight.Bold)
-                        }
+//                        Button(
+//
+//                            onClick = {
+//                                // Check the current page and call the respective registration function
+//                                if (pagerState.currentPage == 0) {
+//                                    handleRegistration() // Email registration
+//                                } else if (pagerState.currentPage == 1) {
+//                                    handlePhoneRegistration() // Phone registration
+//                                }
+//                            },
+//                            modifier = Modifier
+//                                .height(54.dp)
+//                                .fillMaxWidth()
+//                                .padding(horizontal = 16.dp),
+//                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+//                            shape = RoundedCornerShape(10.dp)
+//                        ) {
+//                            Text(text = "Register", fontWeight = FontWeight.Bold)
+//                        }
                     }
                 }
 
@@ -429,7 +472,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
 
                 item {
                     // Leave space at the bottom for the fixed button
-                    Spacer(modifier = Modifier.height(20.dp)) // Ensure space for the button
+
                 }
 
                 item {
@@ -455,8 +498,9 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                                 modifier = Modifier.size(24.dp),
                                 tint = Color.Unspecified
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+
                         }
+
                     }
                 }
             }
@@ -465,6 +509,37 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
 
 }
 
+fun validateUsername(username: String): String? {
+    return when {
+        username.isEmpty() -> "Username cannot be empty."
+        username.length < 3 -> "Username must be at least 3 characters."
+        else -> null
+    }
+}
+
+fun validateEmail(email: String): String? {
+    return when {
+        email.isEmpty() -> "Email cannot be empty."
+        !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Invalid email format."
+        else -> null
+    }
+}
+
+fun validatePassword(password: String): String? {
+    return when {
+        password.isEmpty() -> "Password cannot be empty."
+        password.length < 6 -> "Password must be at least 6 characters."
+        else -> null
+    }
+}
+
+fun validateConfirmPassword(password: String, confirmPassword: String): String? {
+    return when {
+        confirmPassword.isEmpty() -> "Confirm password cannot be empty."
+        confirmPassword != password -> "Passwords do not match."
+        else -> null
+    }
+}
 
 
 @Composable
@@ -477,7 +552,15 @@ fun EmailRegistration(
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmpasswordChange: (String) -> Unit,
-    onRegister: () -> Unit
+    onRegister: () -> Unit,
+    usernameError: String? = null,
+    emailError: String? = null,
+    passwordError: String? = null,
+    confirmPasswordError: String? = null,
+    setUsernameError: (String?) -> Unit,
+    setEmailError: (String?) -> Unit,
+    setPasswordError: (String?) -> Unit,
+    setConfirmPasswordError: (String?) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -485,17 +568,126 @@ fun EmailRegistration(
             .padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        OutlinedTextField(value = username, onValueChange = onUsernameChange, placeholder = { Text("Username") })
-        Spacer(modifier = Modifier.height(4.dp))
-        OutlinedTextField(value = email, onValueChange = onEmailChange, placeholder = { Text("Email") })
-        Spacer(modifier = Modifier.height(4.dp))
-        OutlinedTextField(value = password, onValueChange = onPasswordChange, placeholder = { Text("Password") })
-        Spacer(modifier = Modifier.height(4.dp))
-        OutlinedTextField(value = confirmpassword, onValueChange = onConfirmpasswordChange, placeholder = { Text("Confirm Password") })
-        Spacer(modifier = Modifier.height(4.dp))
+        OutlinedTextField(
+            value = username,
+            onValueChange = onUsernameChange,
+            label = { Text("Username") },
+            isError = usernameError != null,
+            placeholder = { Text("Enter your username") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (usernameError != null) {
+            Text(
+                text = usernameError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
 
+        OutlinedTextField(
+            value = email,
+            onValueChange = onEmailChange,
+            label = { Text("Email") },
+            isError = emailError != null,
+            placeholder = { Text("Enter your email address") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (emailError != null) {
+            Text(
+                text = emailError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = onPasswordChange,
+            label = { Text("Password") },
+            isError = passwordError != null,
+            placeholder = { Text("Enter your password") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (passwordError != null) {
+            Text(
+                text = passwordError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = confirmpassword,
+            onValueChange = onConfirmpasswordChange,
+            label = { Text("Confirm Password") },
+            isError = confirmPasswordError != null,
+            placeholder = { Text("Confirm your password") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (confirmPasswordError != null) {
+            Text(
+                text = confirmPasswordError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+            onClick = {
+                // Clear previous errors
+                setUsernameError(null)
+                setEmailError(null)
+                setPasswordError(null)
+                setConfirmPasswordError(null)
+
+                // Check if any field is empty
+                var isValid = true
+                if (username.isEmpty()) {
+                    setUsernameError("Username cannot be empty")
+                    isValid = false
+                }
+                if (email.isEmpty()) {
+                    setEmailError("Email cannot be empty")
+                    isValid = false
+                }
+                if (password.isEmpty()) {
+                    setPasswordError("Password cannot be empty")
+                    isValid = false
+                }
+                if (confirmpassword.isEmpty()) {
+                    setConfirmPasswordError("Please confirm your password")
+                    isValid = false
+                } else if (password != confirmpassword) {
+                    setConfirmPasswordError("Passwords do not match")
+                    isValid = false
+                }
+
+                if (isValid) {
+                    onRegister()
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Register")
+        }
     }
 }
+
+
 
 fun submitPhoneRegistration(
     phoneNumber: String,
@@ -589,11 +781,6 @@ fun PhoneRegistration(
 
 
 
-
-
-
-
-
 fun submitRegistration(
     name: String,
     email: String,
@@ -681,10 +868,6 @@ fun submitRegistration(
         }
 }
 
-fun submitPhoneRegistration(){
-
-
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

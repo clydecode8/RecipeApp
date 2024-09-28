@@ -17,6 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +51,7 @@ fun AdminDashboard(
     navController: NavController,
     themeViewModel: ThemeViewModel
 ) {
+    var showDialog by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -62,11 +66,23 @@ fun AdminDashboard(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Handle settings action */ }) {
+                    IconButton(onClick = { showDialog = true }) {
                         Icon(
                             imageVector = Icons.Rounded.Settings,
                             contentDescription = "Settings",
                             tint = MaterialTheme.colorScheme.primary
+                        )
+
+                        // Theme selection dialog
+                        ThemeSelectionDialog(
+                            isVisible = showDialog,
+                            onDismiss = { showDialog = false },
+                            navController = navController,
+                            onThemeSelected = { selectedTheme ->
+                                themeViewModel.isDarkTheme.value = (selectedTheme == "Dark")
+                                themeViewModel.toggleTheme()
+                                showDialog = false
+                            }
                         )
                     }
                 }
@@ -125,7 +141,7 @@ fun ProfileSection(navController: NavController, userViewModel: UserProfileProvi
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape)
-                .clickable { navController.navigate("edit_profile") }, // Navigate to edit profile
+                .clickable { navController.navigate("edit_admin") }, // Navigate to edit profile
             contentScale = ContentScale.Crop
         )
 
@@ -147,8 +163,11 @@ fun ProfileSection(navController: NavController, userViewModel: UserProfileProvi
 fun AdminActions(navController: NavController) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ActionButton(text = "Manage Post", onClick = { navController.navigate("manage_post") })
-        ActionButton(text = "Approve Recipe", onClick = { navController.navigate("approve_recipe") })
+        ActionButton(text = "Add Recipe", onClick = { navController.navigate("add_recipe") })
         ActionButton(text = "Add Admin", onClick = { navController.navigate("add_admin") })
+        ActionButton(text = "Sign out", onClick = {
+            FirebaseAuth.getInstance().signOut()
+            navController.navigate("main_page")})
     }
 }
 
@@ -196,7 +215,35 @@ fun HorizontalDivider() {
 }
 
 
-
+@Composable
+fun ThemeSelectionDialog2(
+    isVisible: Boolean,
+    onDismiss: () -> Unit,
+    navController: NavController,
+    onThemeSelected: (String) -> Unit
+) {
+    if (isVisible) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(text = "Select Theme") },
+            text = {
+                Column {
+                    androidx.compose.material.TextButton(onClick = { onThemeSelected("Dark") }) {
+                        Text(text = "Dark Theme")
+                    }
+                    androidx.compose.material.TextButton(onClick = { onThemeSelected("Light") }) {
+                        Text(text = "Light Theme")
+                    }
+                }
+            },
+            confirmButton = {
+                androidx.compose.material.TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
