@@ -153,7 +153,7 @@ fun Header(navController: NavController, userModel: UserViewModel) {
                 .clickable {
                     // Navigate to "My Recipe" page
                    // navController.navigate("my_recipe_page")
-                    navController.navigate("my_recipe_page")
+                    navController.navigate("profile_page")
         },
             contentScale = ContentScale.Crop
         )

@@ -447,7 +447,7 @@ fun handleSignInResult2(result: SignInResult, navController: NavController, user
             }
             "normal" -> {
                 // Navigate to normal user home screen
-                navController.navigate("profile_page") {
+                navController.navigate("recipe_main_page") {
                     popUpTo("main_page") { inclusive = true } // Clear the back stack, removing main_page
                 }
             }
