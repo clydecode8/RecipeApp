@@ -452,7 +452,8 @@ fun ErrorDialogAdmin(
         title = { Text("Error") },
         text = { Text(errorMessage) },
         confirmButton = {
-            Button(onClick = onDismiss) {
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                onClick = onDismiss) {
                 Text("OK")
             }
         }
@@ -469,7 +470,8 @@ fun SuccessDialogAdmin(
         title = { Text("Success") },
         text = { Text(message) },
         confirmButton = {
-            Button(onClick = onDismiss) {
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                onClick = onDismiss) {
                 Text("OK")
             }
         }
