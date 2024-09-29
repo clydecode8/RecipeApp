@@ -156,7 +156,9 @@ fun SearchBar(
         value = query,
         onValueChange = onQueryChange,
         placeholder = { Text("Search users...") },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp), // 将 SearchBar 下移 16dp
         singleLine = true,
         leadingIcon = {
             IconButton(onClick = { onSearch(query) }) {
