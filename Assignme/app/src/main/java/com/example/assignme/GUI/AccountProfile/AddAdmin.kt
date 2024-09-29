@@ -186,7 +186,7 @@ fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider) {
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Login Page",
+                title = "Add Admin",
                 navController = navController,
                 modifier = Modifier
             )

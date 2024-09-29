@@ -59,6 +59,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -80,7 +82,6 @@ import com.example.assignme.ViewModel.MockUserViewModel
 import com.example.assignme.ViewModel.RecipeViewModel
 import com.example.assignme.ViewModel.ThemeViewModel
 import com.google.firebase.auth.FirebaseAuth
-import com.google.accompanist.insets.navigationBarsWithImePadding
 @OptIn(ExperimentalMaterial3Api::class)
 
 @Composable
@@ -139,13 +140,12 @@ fun ProfilePage(
         bottomBar = { AppBottomNavigation(navController) }
     ) { paddingValues ->
 
-
         // Wrap everything in a LazyColumn for vertical scrolling
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .navigationBarsWithImePadding(),
+                .imePadding(), // Adjusts for keyboard,
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -346,7 +346,12 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
         value = query,
         onValueChange = { newQuery -> onQueryChange(newQuery) },
         placeholder = { Text("Search recipes") },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { layoutCoordinates ->
+                // Debugging: Check position and size
+                Log.d("SearchBar", "Position: ${layoutCoordinates.positionInRoot()}, Size: ${layoutCoordinates.size}")
+            }
     )
 }
 

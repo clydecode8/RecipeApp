@@ -19,8 +19,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -156,10 +156,7 @@ fun ReportedPostItem(post: Post, userViewModel: UserViewModel, users: Map<String
                 Button(
                     onClick = { userViewModel.deletePost(post.id) },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFFE23E3E),
-                        contentColor = Color.White
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 ) {
                     Text("Delete Post")
                 }
@@ -167,10 +164,7 @@ fun ReportedPostItem(post: Post, userViewModel: UserViewModel, users: Map<String
                 Button(
                     onClick = { userViewModel.ignoreReport(post.id) },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFFE23E3E),
-                        contentColor = Color.White
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 ) {
                     Text("Ignore Report")
                 }

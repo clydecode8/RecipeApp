@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -36,12 +38,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.assignme.AndroidBar.AppTopBar
 import com.example.assignme.R
 import com.example.assignme.ViewModel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -57,137 +61,81 @@ fun ForgotPasswordPage(navController: NavController, userViewModel: UserViewMode
     var showDialog by remember { mutableStateOf(false) }
     var sent by remember { mutableStateOf(false) }
 
-    // Top-level Box to hold all the components
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeContentPadding()
-            .statusBarsPadding()
-    ) {
-        // LazyColumn for scrollable content
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 15.dp, vertical = 20.dp)
-        ) {
-            item {
-                Row(
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = "Forgot Password", // Updated the title
+                navController = navController,
+                modifier = Modifier
+            )
+        },
+        content = { paddingValues -> // Use paddingValues for inner padding
+
+            // Top-level Box to hold all the components
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues) // Apply scaffold's inner padding
+                    .safeContentPadding()
+                    .statusBarsPadding()
+            ) {
+                // LazyColumn for scrollable content
+                LazyColumn(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 0.dp, top = 30.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.Top
+                        .fillMaxSize()
+                        .padding(horizontal = 15.dp, vertical = 20.dp),
+                    contentPadding = PaddingValues(16.dp) // Inner content padding
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back_arrow),
-                        contentDescription = "Back",
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clickable {
-                                // Navigate back
-                                navController.navigateUp()
-                            },
-                    )
-                }
-            }
+                    item {
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
 
-            item {
-                Spacer(modifier = Modifier.height(20.dp))
-            }
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp),
+                            horizontalAlignment = Alignment.Start,
+                            verticalArrangement = Arrangement.Top
+                        ) {
+                            Text(
+                                text = "OTP Verification",
+                                fontSize = 30.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(18.dp))
+                            Text(
+                                text = "Don't worry! It occurs. Please enter the email address linked with your account.",
+                                fontSize = 18.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
 
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Text(
-                        text = "OTP Verification",
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(18.dp))
-                    Text(
-                        text = "Don't worry! It occurs. Please enter the email address linked with your account.",
-                        fontSize = 18.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-            }
+                    item {
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
 
-            item {
-                Spacer(modifier = Modifier.height(20.dp))
-            }
-
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 15.dp, top = 45.dp)
-                ) {
-                    TextField(
-                        value = email,
-                        onValueChange = { newText -> email = newText },
-                        placeholder = { Text(text = "Enter your email") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 18.dp) // Adds space between text fields
-                    )
-                }
-            }
-
-            item {
-                Button(
-                    onClick = {
-                        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                            dialogMessage = "Invalid email format."
-                            showDialog = true
-                        } else {
-                            sendPasswordResetEmail(
-                                email,
-                                onSuccess = {
-                                    dialogMessage = "A password reset email has been sent to $email if it exists."
-                                    showDialog = true
-                                    sent = true
-                                },
-                                onFailure = { error ->
-                                    dialogMessage = error
-                                    showDialog = true
-                                }
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 15.dp, top = 45.dp)
+                        ) {
+                            TextField(
+                                value = email,
+                                onValueChange = { newText -> email = newText },
+                                placeholder = { Text(text = "Enter your email") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 18.dp) // Adds space between text fields
                             )
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Verify")
-                }
-            }
+                    }
 
-            item {
-                if (sent) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "Didn't receive the code? ",
-                            fontSize = 15.sp,
-                        )
-                        Text(
-                            text = "Resend",
-                            fontSize = 15.sp,
-                            color = Color(0xFF0000FF), // You can customize the color
-                            modifier = Modifier.clickable {
-                                // Navigate to Register screen
+                    item {
+                        Button(
+                            onClick = {
                                 if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                                     dialogMessage = "Invalid email format."
                                     showDialog = true
@@ -197,6 +145,7 @@ fun ForgotPasswordPage(navController: NavController, userViewModel: UserViewMode
                                         onSuccess = {
                                             dialogMessage = "A password reset email has been sent to $email if it exists."
                                             showDialog = true
+                                            sent = true
                                         },
                                         onFailure = { error ->
                                             dialogMessage = error
@@ -204,33 +153,85 @@ fun ForgotPasswordPage(navController: NavController, userViewModel: UserViewMode
                                         }
                                     )
                                 }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = "Verify")
+                        }
+                    }
+
+                    item {
+                        if (sent) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally // Center content horizontally
+                            ) {
+                                Text(
+                                    text = "Didn't receive the code? ",
+                                    fontSize = 15.sp,
+                                    maxLines = 2, // Allow text to wrap if needed
+                                    overflow = TextOverflow.Ellipsis // Use ellipsis if it overflows
+                                )
+                                Text(
+                                    text = "Resend",
+                                    fontSize = 15.sp,
+                                    color = Color(0xFF0000FF), // You can customize the color
+                                    modifier = Modifier.clickable {
+                                        // Validate email format
+                                        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                                            dialogMessage = "Invalid email format."
+                                            showDialog = true
+                                        } else {
+                                            sendPasswordResetEmail(
+                                                email,
+                                                onSuccess = {
+                                                    dialogMessage = "A password reset email has been sent to $email if it exists."
+                                                    showDialog = true
+                                                },
+                                                onFailure = { error ->
+                                                    dialogMessage = error
+                                                    showDialog = true
+                                                }
+                                            )
+                                        }
+                                    }
+                                )
                             }
-                        )
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(50.dp))
                     }
                 }
-            }
 
-            item {
-                Spacer(modifier = Modifier.height(50.dp))
-            }
-        }
-
-        // Dialog for messages
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("Notification") },
-                text = { Text(dialogMessage) },
-                confirmButton = {
-                    Button(
-                        onClick = { showDialog = false }
-                    ) {
-                        Text("OK")
-                    }
+                // Dialog for messages
+                if (showDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = { Text("Notification") },
+                        text = { Text(dialogMessage) },
+                        confirmButton = {
+                            Button(
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                                onClick = { showDialog = false }
+                            ) {
+                                Text("OK")
+                            }
+                        }
+                    )
                 }
-            )
+            }
         }
-    }
+    )
+
 }
 
 

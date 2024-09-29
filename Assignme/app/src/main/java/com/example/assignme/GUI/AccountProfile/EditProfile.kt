@@ -108,6 +108,7 @@ fun EditProfileScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var showErrorDialog2 by remember { mutableStateOf(false) }
+    var showErrorDialog3 by remember { mutableStateOf(false) }
     var passwordVerificationFailed by remember { mutableStateOf(false) }
     var test = true
     var cleanedPhoneNumber = ""
@@ -210,12 +211,12 @@ fun EditProfileScreen(
             }
         )
     }
-
+    val user = FirebaseAuth.getInstance().currentUser
+    val providerId = user!!.providerData[1].providerId // Get the provider ID of the user (e.g., 'google.com' or 'password')
     if (showPasswordDialog) {
-        val user = FirebaseAuth.getInstance().currentUser
+
         if (user != null) {
 
-            val providerId = user.providerData[1].providerId // Get the provider ID of the user (e.g., 'google.com' or 'password')
             if (providerId == EmailAuthProvider.PROVIDER_ID) {
 
                 PasswordInputDialog(
@@ -248,7 +249,7 @@ fun EditProfileScreen(
                                                 if (success) {
                                                     showSuccessDialog = true
                                                 } else {
-                                                    showErrorDialog = true
+                                                    showErrorDialog3 = true
                                                 }
                                             }
                                         }
@@ -265,7 +266,7 @@ fun EditProfileScreen(
                                             if (success) {
                                                 showSuccessDialog = true
                                             } else {
-                                                showErrorDialog = true
+                                                showErrorDialog3 = true
                                             }
                                         }
                                     }
@@ -289,29 +290,17 @@ fun EditProfileScreen(
                     }
                 )
 
-            }else{
+            }
+        }
+    }
 
-                // Password is correct, now call saveUserProfile
-                if (newProfilePictureUri != null) {
-                    uploadProfilePic(userId, context, newProfilePictureUri!!) { imageUrl ->
-                        saveUserProfile(
-                            selectedCountry = selectedCountry,
-                            userId = userId,
-                            name = name,
-                            email = email,
-                            phoneNumber = phoneNumber,
-                            country = country,
-                            gender = gender,
-                            profilePictureUri = imageUrl
-                        ) { success ->
-                            if (success) {
-                                showSuccessDialog = true
-                            } else {
-                                showErrorDialog = true
-                            }
-                        }
-                    }
-                } else {
+    fun submit(){
+
+        if(providerId == "google.com"){
+
+            // Password is correct, now call saveUserProfile
+            if (newProfilePictureUri != null) {
+                uploadProfilePic(userId, context, newProfilePictureUri!!) { imageUrl ->
                     saveUserProfile(
                         selectedCountry = selectedCountry,
                         userId = userId,
@@ -320,17 +309,42 @@ fun EditProfileScreen(
                         phoneNumber = phoneNumber,
                         country = country,
                         gender = gender,
+                        profilePictureUri = imageUrl
                     ) { success ->
                         if (success) {
                             showSuccessDialog = true
+
                         } else {
-                            showErrorDialog = true
+                            showPasswordDialog = false
+                            showErrorDialog3 = true
                         }
                     }
                 }
+            } else {
+                saveUserProfile(
+                    selectedCountry = selectedCountry,
+                    userId = userId,
+                    name = name,
+                    email = email,
+                    phoneNumber = phoneNumber,
+                    country = country,
+                    gender = gender,
+                ) { success ->
+                    if (success) {
+                        showSuccessDialog = true
+
+                    } else {
+                        showPasswordDialog = false
+                        showErrorDialog3 = true
+                    }
+                }
             }
+
         }
+
     }
+
+
 
 
 
@@ -476,7 +490,7 @@ fun EditProfileScreen(
                                 text = when (selectedCountry) {
                                     Country.MALAYSIA -> "+60 "
                                     Country.SINGAPORE -> "+65 "
-                                    Country.DEFAULT -> ""
+                                    Country.DEFAULT -> "+60 "
                                 },
 
                                 modifier = Modifier.padding(start = 8.dp) // Add some space after the prefix
@@ -509,7 +523,11 @@ fun EditProfileScreen(
             item {
                 Button(
                     onClick = {
-                        showPasswordDialog = true // Show the dialog when the button is clicked
+                        if (providerId == EmailAuthProvider.PROVIDER_ID) {
+                            showPasswordDialog = true // Show the dialog if signed in with email/password
+                        } else {
+                            submit() // Call the submit function for other providers
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -535,6 +553,11 @@ fun EditProfileScreen(
         if(showErrorDialog2){
 
             ErrorDialog3(onDismiss = { showErrorDialog2 = false })
+        }
+
+        if(showErrorDialog3){
+
+            ErrorDialog4(onDismiss = { showErrorDialog3 = false })
         }
     }
 
@@ -970,7 +993,7 @@ private fun saveUserProfile(
     val cleanedPhoneNumber = when (selectedCountry) {
         Country.MALAYSIA -> phoneNumber.removePrefix("+60").replace(" ", "").trim()
         Country.SINGAPORE -> phoneNumber.removePrefix("+65").replace(" ", "").trim()
-        else -> phoneNumber
+        else -> phoneNumber.removePrefix("+60").replace(" ", "").trim()
     }
     println("before clean: $phoneNumber")
     println(country)
@@ -982,13 +1005,13 @@ private fun saveUserProfile(
         isPhoneNumberValid = when (selectedCountry) {
             Country.MALAYSIA -> cleanedPhoneNumber.length in 9..10 // Must be 10 or 11 digits
             Country.SINGAPORE -> cleanedPhoneNumber.length == 8 // Must be exactly 8 digits
-            else -> false
+            else -> cleanedPhoneNumber.length in 9..10 // Must be 10 or 11 digits
         }
 
         val prefix = when (selectedCountry) {
             Country.MALAYSIA -> "+60"
             Country.SINGAPORE -> "+65"
-            else -> null
+            else -> "+60"
         }
 
         if (isPhoneNumberValid && prefix != null) {
@@ -1019,84 +1042,89 @@ private fun saveUserProfile(
             onSuccess(false)
             return
         }
+
+        user!!.updateEmail(email)
+            .addOnCompleteListener { updateTask ->
+                if (updateTask.isSuccessful) {
+                    Log.d("Firebase", "Email updated successfully.")
+
+                    // Send verification email
+                    user.sendEmailVerification()
+                        .addOnCompleteListener { sendVerificationTask ->
+                            if (sendVerificationTask.isSuccessful) {
+                                Log.d("Firebase", "Verification email sent.")
+                                // Optionally, inform the user to check their email for verification
+                            } else {
+                                Log.w("Firebase", "Error sending verification email", sendVerificationTask.exception)
+                            }
+                        }
+
+                } else {
+                    Log.w("Firebase", "Error updating email", updateTask.exception)
+                }
+            }
+        // Create a user profile map
+        val userProfile = hashMapOf(
+            "name" to name,
+            "email" to email,
+            "phoneNumber" to newNumb,
+            "country" to country,
+            "gender" to gender,
+            "profilePictureUrl" to (profilePictureUri ?: null), // Set to null if profilePictureUri is null
+            "authmethod" to authProvider,
+            "type" to "user"
+        )
+
+        println("Testing new numb 2 $newNumb")
+
+        // Fetch existing profile to retain the PFP if not updated
+        db.collection("users").document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val existingProfile = document.data ?: emptyMap<String, Any>()
+                    val existingProfilePictureUri = existingProfile["profilePictureUrl"] as? String
+
+                    // Create a user profile map
+                    val userProfile = hashMapOf(
+                        "name" to name,
+                        "email" to email,
+                        "phoneNumber" to newNumb,
+                        "country" to country,
+                        "gender" to gender,
+                        "profilePictureUrl" to (profilePictureUri
+                            ?: existingProfilePictureUri), // Retain existing if null
+                        "authmethod" to authProvider,
+                        "type" to "user"
+                    )
+
+                    // Save to Firestore
+                    db.collection("users").document(userId)
+                        .set(userProfile)
+                        .addOnSuccessListener {
+                            Log.d("Firebase", "Profile successfully updated!")
+                            onSuccess(true)
+
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w("Firebase", "Error updating profile", e)
+                            onSuccess(false)
+
+                        }
+                } else {
+                    Log.w("Firebase", "User profile does not exist.")
+                    onSuccess(false)
+
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.w("Firebase", "Error fetching existing profile", e)
+                onSuccess(false)
+
+            }
     }
 
-    user!!.updateEmail(email)
-        .addOnCompleteListener { updateTask ->
-            if (updateTask.isSuccessful) {
-                Log.d("Firebase", "Email updated successfully.")
 
-                // Send verification email
-                user.sendEmailVerification()
-                    .addOnCompleteListener { sendVerificationTask ->
-                        if (sendVerificationTask.isSuccessful) {
-                            Log.d("Firebase", "Verification email sent.")
-                            // Optionally, inform the user to check their email for verification
-                        } else {
-                            Log.w("Firebase", "Error sending verification email", sendVerificationTask.exception)
-                        }
-                    }
-
-            } else {
-                Log.w("Firebase", "Error updating email", updateTask.exception)
-            }
-        }
-    // Create a user profile map
-    val userProfile = hashMapOf(
-        "name" to name,
-        "email" to email,
-        "phoneNumber" to newNumb,
-        "country" to country,
-        "gender" to gender,
-        "profilePictureUrl" to (profilePictureUri ?: null), // Set to null if profilePictureUri is null
-        "authmethod" to authProvider,
-        "type" to "user"
-    )
-
-    println("Testing new numb 2 $newNumb")
-
-    // Fetch existing profile to retain the PFP if not updated
-    db.collection("users").document(userId)
-        .get()
-        .addOnSuccessListener { document ->
-            if (document.exists()) {
-                val existingProfile = document.data ?: emptyMap<String, Any>()
-                val existingProfilePictureUri = existingProfile["profilePictureUrl"] as? String
-
-                // Create a user profile map
-                val userProfile = hashMapOf(
-                    "name" to name,
-                    "email" to email,
-                    "phoneNumber" to newNumb,
-                    "country" to country,
-                    "gender" to gender,
-                    "profilePictureUrl" to (profilePictureUri
-                        ?: existingProfilePictureUri), // Retain existing if null
-                    "authmethod" to authProvider,
-                    "type" to "user"
-                )
-
-                // Save to Firestore
-                db.collection("users").document(userId)
-                    .set(userProfile)
-                    .addOnSuccessListener {
-                        Log.d("Firebase", "Profile successfully updated!")
-                        onSuccess(true)
-
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w("Firebase", "Error updating profile", e)
-                        onSuccess(false)
-                    }
-            } else {
-                Log.w("Firebase", "User profile does not exist.")
-                onSuccess(false)
-            }
-        }
-        .addOnFailureListener { e ->
-            Log.w("Firebase", "Error fetching existing profile", e)
-            onSuccess(false)
-        }
 }
 
 
@@ -1152,6 +1180,7 @@ fun PasswordInputDialog(
         },
         confirmButton = {
             Button(
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 onClick = {
                     if (password.isBlank()) {
                         passwordError = true // Set error if password is blank
@@ -1165,7 +1194,8 @@ fun PasswordInputDialog(
             }
         },
         dismissButton = {
-            Button(onClick = {
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                onClick = {
                 onCancel() // Call onCancel when dismissing the dialog
                 onDismiss() // Dismiss the dialog
             }) {
@@ -1183,7 +1213,7 @@ fun SuccessDialog2(navController: NavController ,onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
-            Button(
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 onClick = {
                     // Perform navigation
                     navController.navigate("profile_page")
@@ -1204,7 +1234,7 @@ fun ErrorDialog2(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
-            Button(
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 onClick = { onDismiss() }
             ) {
                 Text("OK")
@@ -1216,11 +1246,27 @@ fun ErrorDialog2(onDismiss: () -> Unit) {
 }
 
 @Composable
+fun ErrorDialog4(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        confirmButton = {
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                onClick = { onDismiss() }
+            ) {
+                Text("OK")
+            }
+        },
+        title = { Text(text = "Update Failed") },
+        text = { Text("Invalid Phone Number Format.") }
+    )
+}
+
+@Composable
 fun ErrorDialog3(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
-            Button(
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 onClick = { onDismiss() }
             ) {
                 Text("OK")
