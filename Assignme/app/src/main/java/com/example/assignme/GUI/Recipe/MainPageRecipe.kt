@@ -45,11 +45,19 @@ fun RecipeMainPage(navController: NavController, viewModel: RecipeViewModel = vi
     val windowInfo = rememberWidowInfo()
     val recipes by viewModel.filteredRecipes.collectAsState()
     val categories by viewModel.categories.collectAsState()
-    var selectedCategory by remember { mutableStateOf("") }
+    var selectedCategory by remember {
+        mutableStateOf(if (categories.isNotEmpty()) categories[0] else "")
+    }
 
     LaunchedEffect(Unit) {
         viewModel.fetchRecipes()
         viewModel.fetchCategories()
+    }
+
+    LaunchedEffect(categories) {
+        if (categories.isNotEmpty() && selectedCategory.isEmpty()) {
+            selectedCategory = categories[0]
+        }
     }
 
     Scaffold(

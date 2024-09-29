@@ -43,6 +43,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,8 +52,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +81,7 @@ import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.AndroidBar.AppTopBar
 import com.example.assignme.DataClass.GoogleAuthUiClient
 import com.example.assignme.DataClass.SignInResult
+import com.example.assignme.GUI.Recipe.ui.theme.Orange
 import com.example.assignme.R
 import com.example.assignme.ViewModel.MockUserViewModel
 import com.example.assignme.ViewModel.UserProfileProvider
@@ -274,11 +279,17 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                     // Tabs for Registration Forms
                     TabRow(
                         selectedTabIndex = pagerState.currentPage,
+                        indicator = { tabPositions ->
+                            TabRowDefaults.Indicator(
+                                Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                color = Orange// 设置为橙色
+                            )
+                        }
                     ) {
                         Tab(
                             selected = pagerState.currentPage == 0,
                             onClick = { coroutineScope.launch { pagerState.scrollToPage(0) } },
-                            text = { Text("Email") }
+                            text = { Text("Email", color=Orange) }
                         )
 
                     }
@@ -481,6 +492,7 @@ fun validateConfirmPassword(password: String, confirmPassword: String): String? 
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmailRegistration(
     username: String,
@@ -513,14 +525,20 @@ fun EmailRegistration(
             label = { Text("Username") },
             isError = usernameError != null,
             placeholder = { Text("Enter your username") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = Color(0xFFE23E3E), // 设置橙色边框
+                unfocusedBorderColor = Color.Gray, // 设置未选中时的边框颜色为灰色
+                focusedLabelColor = Color(0xFFE23E3E), // 设置选中时的 label 颜色为橙色
+                unfocusedLabelColor = Color.Black // 未选中时的 label 颜色
+            )
         )
         if (usernameError != null) {
             Text(
                 text = usernameError,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp)
+                modifier = Modifier.padding(start = 16.dp),
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -532,7 +550,13 @@ fun EmailRegistration(
             isError = emailError != null,
             placeholder = { Text("Enter your email address") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = Color(0xFFE23E3E), // 设置橙色边框
+                unfocusedBorderColor = Color.Gray, // 设置未选中时的边框颜色为灰色
+                focusedLabelColor = Color(0xFFE23E3E), // 设置选中时的 label 颜色为橙色
+                unfocusedLabelColor = Color.Black // 未选中时的 label 颜色
+            )
         )
         if (emailError != null) {
             Text(
@@ -540,6 +564,7 @@ fun EmailRegistration(
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(start = 16.dp)
+
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -552,7 +577,13 @@ fun EmailRegistration(
             placeholder = { Text("Enter your password") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = Color(0xFFE23E3E), // 设置橙色边框
+                unfocusedBorderColor = Color.Gray, // 设置未选中时的边框颜色为灰色
+                focusedLabelColor = Color(0xFFE23E3E), // 设置选中时的 label 颜色为橙色
+                unfocusedLabelColor = Color.Black // 未选中时的 label 颜色
+            )
         )
         if (passwordError != null) {
             Text(
@@ -572,7 +603,13 @@ fun EmailRegistration(
             placeholder = { Text("Confirm your password") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = Color(0xFFE23E3E), // 设置橙色边框
+                unfocusedBorderColor = Color.Gray, // 设置未选中时的边框颜色为灰色
+                focusedLabelColor = Color(0xFFE23E3E), // 设置选中时的 label 颜色为橙色
+                unfocusedLabelColor = Color.Black // 未选中时的 label 颜色
+            )
         )
         if (confirmPasswordError != null) {
             Text(

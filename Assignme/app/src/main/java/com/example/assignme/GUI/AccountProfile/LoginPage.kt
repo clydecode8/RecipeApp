@@ -32,12 +32,14 @@ import androidx.compose.material.lightColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +64,7 @@ import com.example.assignme.DataClass.GoogleAuthUiClient
 import com.example.assignme.R
 import com.example.assignme.DataClass.SignInResult
 import com.example.assignme.DataClass.UserData
+import com.example.assignme.GUI.Recipe.ui.theme.Orange
 import com.example.assignme.ViewModel.MockUserViewModel
 import com.example.assignme.ViewModel.UserProfileProvider
 import com.google.android.gms.auth.api.identity.Identity
@@ -75,6 +78,7 @@ import java.io.Console
 import kotlin.math.sign
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) {
 
@@ -240,7 +244,10 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                             placeholder = { Text(text = "Enter your email") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 18.dp)
+                                .padding(bottom = 18.dp),
+                            colors = TextFieldDefaults.outlinedTextFieldColors(
+                                focusedBorderColor = Orange // Change to your Orange color
+                            )
                         )
 
                         OutlinedTextField(
@@ -253,7 +260,10 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 18.dp)
+                                .padding(bottom = 18.dp),
+                            colors = TextFieldDefaults.outlinedTextFieldColors(
+                                focusedBorderColor = Orange // Change to your Orange color
+                            )
                         )
 
                         // Forgot Password text
@@ -408,7 +418,9 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                         } ?: run {
                             println("Error: signInResult is null")
                         }
-                    }) {
+                    },
+                        colors = ButtonDefaults.buttonColors(containerColor = Orange)
+                    ) {
                         Text("OK")
                     }
                 }
@@ -422,7 +434,8 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                 title = { Text("Error") },
                 text = { Text(errorMessage ?: "Unknown error") },
                 confirmButton = {
-                    Button(onClick = { showErrorDialog = false }) {
+                    Button(onClick = { showErrorDialog = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = Orange)) {
                         Text("OK")
                     }
                 }
