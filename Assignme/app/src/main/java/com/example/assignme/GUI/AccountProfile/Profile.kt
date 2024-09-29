@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
@@ -40,6 +42,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallTopAppBar
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -75,7 +79,7 @@ import com.example.assignme.ViewModel.MockUserViewModel
 import com.example.assignme.ViewModel.RecipeViewModel
 import com.example.assignme.ViewModel.ThemeViewModel
 import com.google.firebase.auth.FirebaseAuth
-
+import com.google.accompanist.insets.navigationBarsWithImePadding
 @OptIn(ExperimentalMaterial3Api::class)
 
 @Composable
@@ -134,11 +138,13 @@ fun ProfilePage(
         bottomBar = { AppBottomNavigation(navController) }
     ) { paddingValues ->
 
+
         // Wrap everything in a LazyColumn for vertical scrolling
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .navigationBarsWithImePadding(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -165,7 +171,13 @@ fun ProfilePage(
 
             item {
                 // TabRow for saved/created recipes
-                TabRow(selectedTabIndex = selectedTab) {
+                TabRow(selectedTabIndex = selectedTab,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            color = Orange // Set the indicator (underline) color to Orange
+                        )
+                    }) {
                     Tab(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
