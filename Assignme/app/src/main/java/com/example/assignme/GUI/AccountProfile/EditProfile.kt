@@ -1,6 +1,14 @@
 package com.example.assignme.GUI.AccountProfile
 
+import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.provider.ContactsContract.CommonDataKinds.Email
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,6 +49,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat.startActivityForResult
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
@@ -52,11 +62,19 @@ import com.example.assignme.ViewModel.MockThemeViewModel
 import com.example.assignme.ViewModel.ThemeViewModel
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserProfileProvider
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,10 +83,13 @@ fun EditProfileScreen(
     userViewModel: UserProfileProvider,
     themeViewModel: ThemeViewModel
 ) {
-
+    val RC_SIGN_IN = 5001
     // Lists of options
     val countries = listOf("Singapore", "Malaysia")
     val genders = listOf("Male", "Female")
+
+
+    var hasCameraPermission by remember { mutableStateOf(false) }
 
     // Observe user profile data
     val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
@@ -81,7 +102,6 @@ fun EditProfileScreen(
     var gender by remember { mutableStateOf(userProfile.gender ?: "") }
     var profilePictureUri by remember { mutableStateOf<Uri?>(null) }
 
-
     var selectedCountry by remember { mutableStateOf(Country.DEFAULT) }
     println(selectedCountry)
     var showPasswordDialog by remember { mutableStateOf(false) }
@@ -92,6 +112,9 @@ fun EditProfileScreen(
     var test = true
     var cleanedPhoneNumber = ""
     var invalidPassword by remember { mutableStateOf(false) }
+    var newProfilePictureUri by remember { mutableStateOf<Uri?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+
     // Fetch user profile data if it's not already loaded
     LaunchedEffect(userViewModel.userId.value) {
         userViewModel.userId.value?.let {
@@ -123,7 +146,8 @@ fun EditProfileScreen(
                     Country.SINGAPORE -> phoneNumber.removePrefix("+65").trim()
                     else -> phoneNumber
                 }
-
+                println("Selected country: $selectedCountry")
+                println("Selected phone: $cleanedPhoneNumber")
             }
             test = false
         }
@@ -145,73 +169,225 @@ fun EditProfileScreen(
     }
 
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasCameraPermission = isGranted
+    }
 
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview(),
+        onResult = { bitmap ->
+            if (bitmap != null) {
+                // Save the bitmap to internal storage and update the imageUri
+                val savedUri = saveImageToStorage(userId, context, bitmap)
+                newProfilePictureUri = savedUri // Set the imageUri to the saved image location
+            } else {
+                Log.e("CameraError", "Failed to capture image")
+            }
+        }
+    )
 
-    if (showPasswordDialog) {
-        PasswordInputDialog(
-            onDismiss = { showPasswordDialog = false },
-            onConfirm = { enteredPassword ->
-                // Perform re-authentication
-                val user = FirebaseAuth.getInstance().currentUser
-                if (user != null) {
-                    val credential = EmailAuthProvider.getCredential(user.email!!, enteredPassword)
+    LaunchedEffect(Unit) {
+        hasCameraPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
 
-                    user.reauthenticate(credential).addOnCompleteListener { reAuthTask ->
-                        if (reAuthTask.isSuccessful) {
-                            // Password is correct, now call saveUserProfile
-                            if (profilePictureUri != null) {
-                                uploadProfilePictureToFirebase2(userId, profilePictureUri!!) { imageUrl ->
-                                    saveUserProfile(
-                                        userId = userId,
-                                        name = name,
-                                        email = email,
-                                        phoneNumber = phoneNumber,
-                                        country = country,
-                                        gender = gender,
-                                        profilePictureUri = imageUrl
-                                    ) { success ->
-                                        if (success) {
-                                            showSuccessDialog = true
-                                        } else {
-                                            showErrorDialog = true
-                                        }
-                                    }
-                                }
-                            } else {
-                                saveUserProfile(
-                                    userId = userId,
-                                    name = name,
-                                    email = email,
-                                    phoneNumber = phoneNumber,
-                                    country = country,
-                                    gender = gender,
-                                ) { success ->
-                                    if (success) {
-                                        showSuccessDialog = true
-                                    } else {
-                                        showErrorDialog = true
-                                    }
-                                }
-                            }
-                        } else {
-                            // Handle incorrect password
-                            Log.w("Firebase", "Re-authentication failed: ${reAuthTask.exception?.message}")
-                            passwordVerificationFailed = true // You can show an error message here
-                            showErrorDialog2 = true
-                        }
-                    }
+    if (showDialog) {
+        showDialog(
+            showDialog = showDialog,
+            onDismiss = { showDialog = false },
+            onPickFromGallery = { imagePickerLauncher.launch("image/*") },
+            onTakePhoto = {
+                if (hasCameraPermission) {
+                    cameraLauncher.launch(null)
+                } else {
+                    // Request camera permission if not granted
+                    permissionLauncher.launch(Manifest.permission.CAMERA)
                 }
-            },
-            onCancel = {
-                // Handle any cancellation logic if needed
-                invalidPassword = false // Reset invalid password state
-            },
-            invalidPassword = invalidPassword, // Pass the current invalidPassword state
-            onInvalidPasswordChanged = { isInvalid ->
-                invalidPassword = isInvalid // Callback to update invalidPassword state
             }
         )
     }
+
+    if (showPasswordDialog) {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user != null) {
+
+            val providerId = user.providerData[1].providerId // Get the provider ID of the user (e.g., 'google.com' or 'password')
+            if (providerId == EmailAuthProvider.PROVIDER_ID) {
+
+                PasswordInputDialog(
+                    onDismiss = { showPasswordDialog = false },
+                    onConfirm = { enteredPassword ->
+
+                        // Perform re-authentication
+                        if (user != null) {
+                            // For Email/Password Sign-In
+                            val credential =
+                                EmailAuthProvider.getCredential(user.email!!, enteredPassword)
+
+                            user.reauthenticate(credential).addOnCompleteListener { reAuthTask ->
+                                if (reAuthTask.isSuccessful) {
+                                    println(newProfilePictureUri)
+                                    println(profilePictureUri)
+                                    // Password is correct, now call saveUserProfile
+                                    if (newProfilePictureUri != null) {
+                                        uploadProfilePic(userId, context, newProfilePictureUri!!) { imageUrl ->
+                                            saveUserProfile(
+                                                selectedCountry = selectedCountry,
+                                                userId = userId,
+                                                name = name,
+                                                email = email,
+                                                phoneNumber = phoneNumber,
+                                                country = country,
+                                                gender = gender,
+                                                profilePictureUri = imageUrl
+                                            ) { success ->
+                                                if (success) {
+                                                    showSuccessDialog = true
+                                                } else {
+                                                    showErrorDialog = true
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        saveUserProfile(
+                                            selectedCountry = selectedCountry,
+                                            userId = userId,
+                                            name = name,
+                                            email = email,
+                                            phoneNumber = phoneNumber,
+                                            country = country,
+                                            gender = gender,
+                                        ) { success ->
+                                            if (success) {
+                                                showSuccessDialog = true
+                                            } else {
+                                                showErrorDialog = true
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Handle incorrect password
+                                    Log.w("Firebase", "Re-authentication failed: ${reAuthTask.exception?.message}")
+                                    passwordVerificationFailed = true // You can show an error message here
+                                    showErrorDialog2 = true
+                                }
+                            }
+                        }
+
+                    },
+                    onCancel = {
+                        // Handle any cancellation logic if needed
+                        invalidPassword = false // Reset invalid password state
+                    },
+                    invalidPassword = invalidPassword, // Pass the current invalidPassword state
+                    onInvalidPasswordChanged = { isInvalid ->
+                        invalidPassword = isInvalid // Callback to update invalidPassword state
+                    }
+                )
+
+            }else{
+
+                // Password is correct, now call saveUserProfile
+                if (newProfilePictureUri != null) {
+                    uploadProfilePic(userId, context, newProfilePictureUri!!) { imageUrl ->
+                        saveUserProfile(
+                            selectedCountry = selectedCountry,
+                            userId = userId,
+                            name = name,
+                            email = email,
+                            phoneNumber = phoneNumber,
+                            country = country,
+                            gender = gender,
+                            profilePictureUri = imageUrl
+                        ) { success ->
+                            if (success) {
+                                showSuccessDialog = true
+                            } else {
+                                showErrorDialog = true
+                            }
+                        }
+                    }
+                } else {
+                    saveUserProfile(
+                        selectedCountry = selectedCountry,
+                        userId = userId,
+                        name = name,
+                        email = email,
+                        phoneNumber = phoneNumber,
+                        country = country,
+                        gender = gender,
+                    ) { success ->
+                        if (success) {
+                            showSuccessDialog = true
+                        } else {
+                            showErrorDialog = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
+//               if (user != null) {
+//                    val credential = EmailAuthProvider.getCredential(user.email!!, enteredPassword)
+//
+//                    user.reauthenticate(credential).addOnCompleteListener { reAuthTask ->
+//                        if (reAuthTask.isSuccessful) {
+//                            println(newProfilePictureUri)
+//                            println(profilePictureUri)
+//                            // Password is correct, now call saveUserProfile
+//                            if (newProfilePictureUri != null) {
+//                                uploadProfilePic(userId, context, newProfilePictureUri!!) { imageUrl ->
+//                                    saveUserProfile(
+//                                        selectedCountry = selectedCountry,
+//                                        userId = userId,
+//                                        name = name,
+//                                        email = email,
+//                                        phoneNumber = phoneNumber,
+//                                        country = country,
+//                                        gender = gender,
+//                                        profilePictureUri = imageUrl
+//                                    ) { success ->
+//                                        if (success) {
+//                                            showSuccessDialog = true
+//                                        } else {
+//                                            showErrorDialog = true
+//                                        }
+//                                    }
+//                                }
+//                            } else {
+//                                saveUserProfile(
+//                                    selectedCountry = selectedCountry,
+//                                    userId = userId,
+//                                    name = name,
+//                                    email = email,
+//                                    phoneNumber = phoneNumber,
+//                                    country = country,
+//                                    gender = gender,
+//                                ) { success ->
+//                                    if (success) {
+//                                        showSuccessDialog = true
+//                                    } else {
+//                                        showErrorDialog = true
+//                                    }
+//                                }
+//                            }
+//                        } else {
+//                            // Handle incorrect password
+//                            Log.w("Firebase", "Re-authentication failed: ${reAuthTask.exception?.message}")
+//                            passwordVerificationFailed = true // You can show an error message here
+//                            showErrorDialog2 = true
+//                        }
+//                    }
+//                }
+
 
     Scaffold(
         topBar = { AppTopBar(title = "Edit Profile", navController = navController, modifier = Modifier) },
@@ -243,7 +419,8 @@ fun EditProfileScreen(
                             .size(80.dp)
                             .clip(CircleShape)
                             .clickable {
-                                imagePickerLauncher.launch("image/*")
+                                showDialog = true
+
                             },
                         contentScale = ContentScale.Crop
                     )
@@ -255,14 +432,6 @@ fun EditProfileScreen(
                     label = "Name",
                     value = name,
                     onValueChange = { name = it }
-                )
-            }
-
-            item {
-                ProfileTextField2(
-                    label = "Email",
-                    value = email,
-                    onValueChange = { email = it }
                 )
             }
 
@@ -368,10 +537,36 @@ fun EditProfileScreen(
             ErrorDialog3(onDismiss = { showErrorDialog2 = false })
         }
     }
+
+
+
+
+
+}
+
+
+fun getBitmapFromUrl(context: Context, uri: Uri): Bitmap? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        BitmapFactory.decodeStream(inputStream)
+    } catch (e: Exception) {
+        null
+    }
 }
 
 enum class Country {
     MALAYSIA, SINGAPORE, DEFAULT
+}
+
+// Save bitmap image to internal storage and return the URI
+private fun saveImageToStorage(userId: String?, context: Context, bitmap: Bitmap): Uri {
+    val filename = "${System.currentTimeMillis()}.jpg"
+    val file = File(context.filesDir, filename)
+    val fos = FileOutputStream(file)
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+    fos.flush()
+    fos.close()
+    return Uri.fromFile(file)
 }
 
 @Composable
@@ -540,6 +735,7 @@ fun ProfileDropdown2(
 fun uploadProfilePictureToFirebase2(
     userId: String,
     uri: Uri,
+    context: Context,
     onComplete: (String?) -> Unit
 ) {
     // Firestore reference
@@ -569,8 +765,9 @@ fun uploadProfilePictureToFirebase2(
             Log.d("Firebase", "No old profile picture to delete.")
         }
 
+
         // Proceed with uploading the new profile picture
-        uploadNewProfilePicture(userId, uri, userDocRef, onComplete)
+        uploadProfilePic(userId, context, uri, onComplete)
 
     }.addOnFailureListener { exception ->
         Log.e("Firestore", "Failed to retrieve current profile picture: ${exception.message}")
@@ -578,44 +775,114 @@ fun uploadProfilePictureToFirebase2(
     }
 }
 
-private fun uploadNewProfilePicture(
+fun uploadProfilePic(
     userId: String,
+    context: Context,
     uri: Uri,
-    userDocRef: DocumentReference,
     onComplete: (String?) -> Unit
 ) {
-    val storageRef = FirebaseStorage.getInstance().reference
-    val profilePicturesRef = storageRef.child("users/$userId/profile_picture/${System.currentTimeMillis()}.jpg")
+    // Firestore reference
+    val db = FirebaseFirestore.getInstance()
+    val userDocRef = db.collection("users").document(userId)
+    val bitmap = getBitmapFromUrl(context, uri)
 
-    profilePicturesRef.putFile(uri)
-        .addOnSuccessListener {
-            // Retrieve the new download URL
-            profilePicturesRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                val newProfilePictureUrl = downloadUrl.toString()
 
-                // Update Firestore with the new profile picture URL
-                val profilePicData: Map<String, Any> = mapOf("profilePictureUrl" to newProfilePictureUrl)
 
-                userDocRef.update(profilePicData)
-                    .addOnSuccessListener {
-                        Log.d("Firestore", "New profile picture URL updated successfully.")
-                        onComplete(newProfilePictureUrl)
+    // Compress the bitmap
+    if (bitmap != null) {
+        val compressedImage = compressBitmap(bitmap)
+
+        // First, retrieve the current profile picture URL
+        userDocRef.get().addOnSuccessListener { document ->
+            val currentProfilePictureUrl = document.getString("profilePictureUrl")
+
+            // Log the current profile picture URL for debugging
+            Log.d("Firebase", "Current profile picture URL: $currentProfilePictureUrl")
+
+            // Delete the old profile picture if it exists
+            if (!currentProfilePictureUrl.isNullOrEmpty()) {
+                try {
+                    val oldPictureRef = FirebaseStorage.getInstance().getReferenceFromUrl(currentProfilePictureUrl)
+                    oldPictureRef.delete().addOnSuccessListener {
+                        Log.d("Firebase", "Old profile picture deleted successfully.")
+                    }.addOnFailureListener { exception ->
+                        Log.e("Firebase", "Failed to delete old profile picture: ${exception.message}")
                     }
-                    .addOnFailureListener { exception ->
-                        Log.e("Firestore", "Failed to update profile picture URL in Firestore: ${exception.message}")
-                        onComplete(null)
-                    }
-
-            }.addOnFailureListener { exception ->
-                Log.e("Firebase", "Failed to get new profile picture URL: ${exception.message}")
-                onComplete(null)
+                } catch (e: IllegalArgumentException) {
+                    Log.e("Firebase", "Invalid URL for old profile picture: $currentProfilePictureUrl")
+                }
+            } else {
+                Log.d("Firebase", "No old profile picture to delete.")
             }
-        }
-        .addOnFailureListener { exception ->
-            Log.e("Firebase", "Failed to upload new profile picture: ${exception.message}")
+
+            // Firebase Storage reference
+            val storageReference = FirebaseStorage.getInstance().reference.child("users/$userId/profile_picture/${System.currentTimeMillis()}.jpg")
+
+            // Upload the compressed image as a ByteArray
+            val uploadTask = storageReference.putBytes(compressedImage)
+
+            uploadTask.addOnSuccessListener {
+                // Get the image URL from Firebase
+                storageReference.downloadUrl.addOnSuccessListener { uri ->
+                    onComplete(uri.toString())  // Return the download URL as a String
+                }
+            }.addOnFailureListener {
+                println("Something went wrong.")
+            }
+
+
+        }.addOnFailureListener { exception ->
+            Log.e("Firestore", "Failed to retrieve current profile picture: ${exception.message}")
             onComplete(null)
         }
+
+    } else {
+        // Handle error if bitmap retrieval fails
+        println("Failed to retrieve Bitmap from Uri")
+    }
+
+
+
 }
+
+//private fun uploadNewProfilePicture(
+//    userId: String,
+//    uri: Uri,
+//    userDocRef: DocumentReference,
+//    onComplete: (String?) -> Unit
+//) {
+//    val storageRef = FirebaseStorage.getInstance().reference
+//    val profilePicturesRef = storageRef.child("users/$userId/profile_picture/${System.currentTimeMillis()}.jpg")
+//
+//    profilePicturesRef.putFile(uri)
+//        .addOnSuccessListener {
+//            // Retrieve the new download URL
+//            profilePicturesRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+//                val newProfilePictureUrl = downloadUrl.toString()
+//
+//                // Update Firestore with the new profile picture URL
+//                val profilePicData: Map<String, Any> = mapOf("profilePictureUrl" to newProfilePictureUrl)
+//
+//                userDocRef.update(profilePicData)
+//                    .addOnSuccessListener {
+//                        Log.d("Firestore", "New profile picture URL updated successfully.")
+//                        onComplete(newProfilePictureUrl)
+//                    }
+//                    .addOnFailureListener { exception ->
+//                        Log.e("Firestore", "Failed to update profile picture URL in Firestore: ${exception.message}")
+//                        onComplete(null)
+//                    }
+//
+//            }.addOnFailureListener { exception ->
+//                Log.e("Firebase", "Failed to get new profile picture URL: ${exception.message}")
+//                onComplete(null)
+//            }
+//        }
+//        .addOnFailureListener { exception ->
+//            Log.e("Firebase", "Failed to upload new profile picture: ${exception.message}")
+//            onComplete(null)
+//        }
+//}
 
 
 //fun uploadProfilePictureToFirebase(
@@ -682,6 +949,7 @@ private fun uploadNewProfilePicture(
 //}
 
 private fun saveUserProfile(
+    selectedCountry: Country,
     userId: String,
     name: String,
     email: String,
@@ -699,44 +967,58 @@ private fun saveUserProfile(
     val authProvider = user?.providerData?.getOrNull(1)?.providerId ?: "unknown"
 
     // Remove prefixes and validate phone number based on country
-    val cleanedPhoneNumber = when (country) {
-        "Malaysia" -> phoneNumber.removePrefix("+60").replace(" ", "").trim()
-        "Singapore" -> phoneNumber.removePrefix("+65").replace(" ", "").trim()
+    val cleanedPhoneNumber = when (selectedCountry) {
+        Country.MALAYSIA -> phoneNumber.removePrefix("+60").replace(" ", "").trim()
+        Country.SINGAPORE -> phoneNumber.removePrefix("+65").replace(" ", "").trim()
         else -> phoneNumber
     }
+    println("before clean: $phoneNumber")
     println(country)
     println(cleanedPhoneNumber)
+    var isPhoneNumberValid = false
+    if(phoneNumber != null){
 
-    // Validation for phone number based on country
-    val isPhoneNumberValid = when (country) {
-        "Malaysia" -> cleanedPhoneNumber.length in 9..10 // Must be 10 or 11 digits
-        "Singapore" -> cleanedPhoneNumber.length == 8 // Must be exactly 8 digits
-        else -> false
-    }
+        // Validation for phone number based on country
+        isPhoneNumberValid = when (selectedCountry) {
+            Country.MALAYSIA -> cleanedPhoneNumber.length in 9..10 // Must be 10 or 11 digits
+            Country.SINGAPORE -> cleanedPhoneNumber.length == 8 // Must be exactly 8 digits
+            else -> false
+        }
 
-    val prefix = when (country) {
-        "Malaysia" -> "+60"
-        "Singapore" -> "+65"
-        else -> null
-    }
+        val prefix = when (selectedCountry) {
+            Country.MALAYSIA -> "+60"
+            Country.SINGAPORE -> "+65"
+            else -> null
+        }
 
-    if (isPhoneNumberValid && prefix != null) {
-        newNumb = "$prefix$cleanedPhoneNumber"
-        println("Testing new numb $newNumb")
-    } else {
-        Log.w("Validation", "Invalid phone number format.")
-        onSuccess(false)
-        return
+        if (isPhoneNumberValid && prefix != null) {
+            newNumb = "$prefix$cleanedPhoneNumber"
+            println("Testing new numb $newNumb")
+        } else {
+            Log.w("Validation", "Invalid phone number format.")
+            onSuccess(false)
+            return
+        }
+
     }
 
     // Validation for email format
     val isEmailValid = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
 
-    // If validations fail, call onSuccess with false
-    if (!isPhoneNumberValid || !isEmailValid) {
-        Log.w("Validation", "Invalid phone number or email format.")
-        onSuccess(false)
-        return
+    if(phoneNumber != null){
+
+        // If validations fail, call onSuccess with false
+        if (!isPhoneNumberValid) {
+            Log.w("Validation", "Invalid phone number")
+            onSuccess(false)
+            return
+        }
+
+        if(!isEmailValid){
+            Log.w("Validation", "Invalid email format.")
+            onSuccess(false)
+            return
+        }
     }
 
     user!!.updateEmail(email)
@@ -771,6 +1053,8 @@ private fun saveUserProfile(
         "type" to "user"
     )
 
+    println("Testing new numb 2 $newNumb")
+
     // Fetch existing profile to retain the PFP if not updated
     db.collection("users").document(userId)
         .get()
@@ -783,7 +1067,7 @@ private fun saveUserProfile(
                 val userProfile = hashMapOf(
                     "name" to name,
                     "email" to email,
-                    "phoneNumber" to phoneNumber,
+                    "phoneNumber" to newNumb,
                     "country" to country,
                     "gender" to gender,
                     "profilePictureUrl" to (profilePictureUri
@@ -798,6 +1082,7 @@ private fun saveUserProfile(
                     .addOnSuccessListener {
                         Log.d("Firebase", "Profile successfully updated!")
                         onSuccess(true)
+
                     }
                     .addOnFailureListener { e ->
                         Log.w("Firebase", "Error updating profile", e)
@@ -946,15 +1231,38 @@ fun ErrorDialog3(onDismiss: () -> Unit) {
     )
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewAdminEditProfileScreen() {
 
-    val mockThemeViewModel = MockThemeViewModel()
-    EditProfileScreen(
-        navController = rememberNavController(),
-        userViewModel = MockUserViewModel(),
-        themeViewModel = mockThemeViewModel
-    )
+
+@Composable
+fun showDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onPickFromGallery: () -> Unit,
+    onTakePhoto: () -> Unit
+) {
+    if (showDialog) {
+
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Pick an Image Source") },
+            text = { Text("Choose from gallery or Take Photo") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onPickFromGallery() // Launch the gallery picker
+                    onDismiss()
+                }) {
+                    Text("Gallery")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    onTakePhoto() // Launch the camera picker
+                    onDismiss()
+                }) {
+                    Text("Camera")
+                }
+            }
+        )
+    }
 }
 

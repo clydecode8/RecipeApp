@@ -836,6 +836,7 @@ fun AddNewIngredientButton(onAdd: () -> Unit) {
     }
 }
 
+
 // Only one definition of showImageSourceDialog
 @Composable
 fun showImageSourceDialog(
