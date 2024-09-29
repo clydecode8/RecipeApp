@@ -5,6 +5,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import com.example.assignme.AndroidBar.AppTopBar
+import com.example.assignme.DataClass.WindowInfo
+import com.example.assignme.DataClass.rememberWidowInfo
 import com.example.assignme.GUI.Community.VideoPlayer
 import com.example.assignme.R
 import com.example.assignme.ViewModel.Post
@@ -36,10 +41,26 @@ import com.example.assignme.ViewModel.UserViewModel
 fun SocialFeedScreen(navController: NavController, userViewModel: UserViewModel) {
     val posts by userViewModel.posts.observeAsState(emptyList())
 
+    // Get window size class
+    val windowInfo = rememberWidowInfo()
+    val columns = when (windowInfo.screenWidthInfo) {
+        WindowInfo.WindowType.Compact -> 1
+        WindowInfo.WindowType.Medium -> 2
+        WindowInfo.WindowType.Expanded -> 2
+    }
+
     Scaffold(
         topBar = { AppTopBar(title = "Back", navController = navController) }
     ) { innerPadding ->
-        LazyColumn(modifier = Modifier.padding(innerPadding)) {
+        // Use LazyVerticalGrid to display posts in grid layout
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(columns),
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp), // Adjust padding for grid spacing
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             item { ReportsButton(navController) }
             item { TrendingSection() }
             items(posts.sortedByDescending { it.likes }) { post ->
