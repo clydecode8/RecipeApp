@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,6 +41,10 @@ import com.example.assignme.ViewModel.MockUserViewModel
 
 @Composable
 fun AppFirstPage(navController: NavController, userViewModel: UserProfileProvider) {
+
+    // Detect screen orientation
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
     Box(
         modifier = Modifier
@@ -55,100 +60,135 @@ fun AppFirstPage(navController: NavController, userViewModel: UserProfileProvide
             contentScale = ContentScale.Crop
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .safeContentPadding(), // Set a background color to contrast the white icon
-            horizontalAlignment = Alignment.CenterHorizontally, // Center horizontally
-            verticalArrangement = Arrangement.Top // Arrange content at the top
-        ){
-
-            //Premium recipe
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(30.dp)
-
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_main_star),
-                    contentDescription = "Star Icon",
-                    modifier = Modifier.size(12.dp),
-                    tint = Color.White
-                )
-
-                Spacer(modifier = Modifier.width(8.dp)) // Add space between the icon and text
-                Text(
-                    text = "Premium Recipes",
-                    style = MaterialTheme.typography.labelMedium, // Customize the text style
-                    color = Color.White
-                )
-            }
-
+        // Adjust layout based on orientation
+        if (isPortrait) {
+            PortraitContent(navController)
+        } else {
+            LandscapeContent(navController)
         }
+    }
+}
 
-        Column(
+@Composable
+fun PortraitContent(navController: NavController) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .safeContentPadding(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ){
+        PremiumRecipeRow()
+    }
 
-            modifier = Modifier
-                .fillMaxSize()
-                .safeContentPadding()
-                .statusBarsPadding(), // Set a background color to contrast the white icon
-            horizontalAlignment = Alignment.CenterHorizontally, // Center horizontally
-            verticalArrangement = Arrangement.Center // Arrange content at the top
-        ){
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .safeContentPadding()
+            .statusBarsPadding(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ){
+        MainTextContent()
+    }
 
-            Text(
-                text = "Let's",
-                fontSize = 56.sp,
-                color = Color.White,
-            )
-
-            Text(
-                text = "Cooking",
-                fontSize = 56.sp,
-                color = Color.White,
-            )
-
-            Text(
-                text = "Find best recipes for cooking",
-                fontSize = 20.sp,
-                modifier = Modifier.padding(top = 30.dp),
-                color = Color.White,
-            )
-
-
-        }
-
-        Box(modifier = Modifier
+    Box(
+        modifier = Modifier
             .fillMaxSize()
             .padding(bottom = 150.dp),
-            contentAlignment = Alignment.BottomCenter){
+        contentAlignment = Alignment.BottomCenter
+    ){
+        StartCookingButton(navController)
+    }
+}
 
-            //Next
-            Button(
-//                onClick = { navController.navigate("recipe_main_page") },
-                onClick = { navController.navigate("first_page") },
-
-                modifier = Modifier
-                    .padding(horizontal = 32.dp)
-                    .size(width = 206.dp, height = 54.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)), // Set button color
-                shape = RoundedCornerShape(10.dp) // Set the button shape to rectangular
-
-            ) {
-
-                Spacer(modifier = Modifier.width(8.dp)) // Space between icon and text
-                Text(text = "Start Cooking")
-            }
-
+@Composable
+fun LandscapeContent(navController: NavController) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            MainTextContent()
         }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            PremiumRecipeRow()
+            StartCookingButton(navController)
+        }
+    }
+}
+
+@Composable
+fun PremiumRecipeRow() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(30.dp)
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_main_star),
+            contentDescription = "Star Icon",
+            modifier = Modifier.size(12.dp),
+            tint = Color.White
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "Premium Recipes",
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White
+        )
+    }
+}
+
+@Composable
+fun MainTextContent() {
+    Text(
+        text = "Let's",
+        fontSize = 56.sp,
+        color = Color.White,
+    )
+    Text(
+        text = "Cooking",
+        fontSize = 56.sp,
+        color = Color.White,
+    )
+    Text(
+        text = "Find best recipes for cooking",
+        fontSize = 20.sp,
+        modifier = Modifier.padding(top = 30.dp),
+        color = Color.White,
+    )
+}
+
+@Composable
+fun StartCookingButton(navController: NavController) {
+    Button(
+        onClick = { navController.navigate("first_page") },
+        modifier = Modifier
+            .padding(horizontal = 32.dp)
+            .size(width = 206.dp, height = 54.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+        shape = RoundedCornerShape(10.dp)
+    ) {
+        Text(text = "Start Cooking")
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun PreviewMainPage() {
-
     AppFirstPage(
         navController = rememberNavController(),
         userViewModel = MockUserViewModel()

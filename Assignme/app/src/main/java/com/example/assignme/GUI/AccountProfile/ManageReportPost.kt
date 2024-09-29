@@ -3,6 +3,7 @@ package com.example.assignme.GUI.AccountProfile
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,12 +13,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import com.example.assignme.AndroidBar.AppTopBar
+import com.example.assignme.DataClass.WindowInfo
+import com.example.assignme.DataClass.rememberWidowInfo
 import com.example.assignme.GUI.Community.VideoPlayer
 import com.example.assignme.ViewModel.Post
 import com.example.assignme.ViewModel.UserProfile
@@ -43,13 +50,29 @@ fun ManageReportPostScreen(navController: NavController, userViewModel: UserView
     val reportedPosts by userViewModel.reportedPosts.observeAsState(emptyList())
     val users by userViewModel.users.observeAsState(emptyMap())
 
+    // Get window size class
+    val windowInfo = rememberWidowInfo()
+    val columns = when (windowInfo.screenWidthInfo) {
+        WindowInfo.WindowType.Compact -> 1
+        WindowInfo.WindowType.Medium -> 2
+        WindowInfo.WindowType.Expanded -> 2
+    }
+
     Scaffold(
         topBar = { AppTopBar(title = "Reported Posts", navController = navController) }
     ) { innerPadding ->
         if (reportedPosts.isEmpty()) {
             Text("No reported posts", modifier = Modifier.padding(16.dp))
         } else {
-            LazyColumn(modifier = Modifier.padding(innerPadding)) {
+            // Use LazyVerticalGrid to display reported posts in grid layout
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(columns),
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp), // Adjust padding for grid spacing
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 items(reportedPosts) { post ->
                     ReportedPostItem(post, userViewModel, users)
                 }
@@ -66,7 +89,7 @@ fun ReportedPostItem(post: Post, userViewModel: UserViewModel, users: Map<String
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(vertical = 8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Reported user info
@@ -77,22 +100,17 @@ fun ReportedPostItem(post: Post, userViewModel: UserViewModel, users: Map<String
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                    .border(1.5.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape),
+                        .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Reported user: ${reportedUser?.name ?: "Unknown"}",
-//                    style = MaterialTheme.typography.titleMedium
-                )
+                Text("Reported user: ${reportedUser?.name ?: "Unknown"}")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // Post content
-            Text(post.content,
-//                style = MaterialTheme.typography.bodyLarge
-            )
+            Text(post.content)
 
             // Post image
             post.imagePath?.let { imagePath ->
@@ -122,24 +140,14 @@ fun ReportedPostItem(post: Post, userViewModel: UserViewModel, users: Map<String
             Spacer(modifier = Modifier.height(8.dp))
 
             // Report reason and reporter info
-            Text(
-                "Reported by: ${reportedByUser?.name ?: "Unknown"}",
-//                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                "Report Reason: ${post.reportReason?.substringAfter(":") ?: "No reason provided"}",
-//                style = MaterialTheme.typography.bodyMedium
-            )
+            Text("Reported by: ${reportedByUser?.name ?: "Unknown"}")
+            Text("Report Reason: ${post.reportReason?.substringAfter(":") ?: "No reason provided"}")
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // Post stats
-            Text("Likes: ${post.likes}",
-//                style = MaterialTheme.typography.bodyMedium
-            )
-            Text("Comments: ${post.comments}",
-//                style = MaterialTheme.typography.bodyMedium
-            )
+            Text("Likes: ${post.likes}")
+            Text("Comments: ${post.comments}")
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -150,7 +158,7 @@ fun ReportedPostItem(post: Post, userViewModel: UserViewModel, users: Map<String
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = Color(0xFFE23E3E),
-                        contentColor = Color.White// 设置背景颜色为红色
+                        contentColor = Color.White
                     )
                 ) {
                     Text("Delete Post")
@@ -161,7 +169,7 @@ fun ReportedPostItem(post: Post, userViewModel: UserViewModel, users: Map<String
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = Color(0xFFE23E3E),
-                        contentColor = Color.White// 设置背景颜色为红色
+                        contentColor = Color.White
                     )
                 ) {
                     Text("Ignore Report")
