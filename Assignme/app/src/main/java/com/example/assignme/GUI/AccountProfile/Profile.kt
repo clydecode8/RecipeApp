@@ -36,6 +36,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -164,7 +165,7 @@ fun ProfilePage(
                         .fillMaxWidth() // Set the button to have maximum width
                         .padding(vertical = 8.dp) // Optional: Add vertical padding for spacing
                 ) {
-                    Text("My Recipes", color=Orange)
+                    Text("My Recipes", color = MaterialTheme.colorScheme.onSurfaceVariant )
                 }
             }
 
@@ -175,13 +176,13 @@ fun ProfilePage(
                     indicator = { tabPositions ->
                         TabRowDefaults.Indicator(
                             Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                            color = Orange // Set the indicator (underline) color to Orange
+                            color = Orange  // Set the indicator (underline) color to Orange
                         )
                     }) {
                     Tab(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
-                        text = { Text("Saved Recipes", color=Orange) }
+                        text = { Text("Saved Recipes", color = MaterialTheme.colorScheme.onSurfaceVariant ) }
                     )
                 }
             }
@@ -332,7 +333,7 @@ fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvid
             ) {
                 Text(
                     "Edit profile",
-                    color = Orange // Set your desired color here
+                    color = MaterialTheme.colorScheme.onSurfaceVariant // Set your desired color here
                 )
             }
         }
