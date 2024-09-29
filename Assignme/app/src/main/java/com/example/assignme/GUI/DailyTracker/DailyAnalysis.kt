@@ -144,82 +144,80 @@ fun DailyAnalysis(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(400.dp),
+                    .wrapContentHeight(), // Wrap content based on the table height
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                LazyColumn(
+                val tableSizeFactor = 0.6f
+
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    val tableSizeFactor = 0.6f
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.LightGray)
-                                .border((1 * tableSizeFactor).dp, Color.Gray)
-                        ) {
-                            // Table headers
-                            listOf("Date", "Weight (kg)", "Water (glass)", "Calories (kcal)").forEach { header ->
-                                Box(modifier = Modifier.weight(1f).border((1 * tableSizeFactor).dp, Color.Gray)) {
-                                    Text(
-                                        header,
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            fontSize = (16 * tableSizeFactor).sp,
-                                            color = Color.Black // Set the text color to black
-                                        ),
-                                        modifier = Modifier.padding((8 * tableSizeFactor).dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    items(filteredEntries.take(10)) { entry ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border((1 * tableSizeFactor).dp, Color.Gray)
-                        ) {
-                            // Table data for each entry
-                            listOf(
-                                entry.date.toString(),
-                                entry.weight.toString(),
-                                entry.waterIntake.toString(),
-                                entry.caloriesIntake.toString()
-                            ).forEach { value ->
-                                Box(modifier = Modifier.weight(1f).border((1 * tableSizeFactor).dp, Color.Gray)) {
-                                    Text(
-                                        value,
-                                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = (14 * tableSizeFactor).sp),
-                                        modifier = Modifier.padding((8 * tableSizeFactor).dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (filteredEntries.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding((8 * tableSizeFactor).dp),
-                                contentAlignment = Alignment.Center
-                            ) {
+                    // Table header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.LightGray)
+                            .border((1 * tableSizeFactor).dp, Color.Gray)
+                    ) {
+                        listOf("Date", "Weight (kg)", "Water (glass)", "Calories (kcal)").forEach { header ->
+                            Box(modifier = Modifier.weight(1f).border((1 * tableSizeFactor).dp, Color.Gray)) {
                                 Text(
-                                    "No entries recorded yet for this period.",
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = (14 * tableSizeFactor).sp),
-                                    color = Color.Red
+                                    header,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontSize = (16 * tableSizeFactor).sp,
+                                        color = Color.Black // Set the text color to black
+                                    ),
+                                    modifier = Modifier.padding((8 * tableSizeFactor).dp)
                                 )
                             }
-                            Log.d(TAG, "No entries found for the current month: $currentMonth")
                         }
+                    }
+
+                    // Table rows (for each entry)
+                    if (filteredEntries.isNotEmpty()) {
+                        filteredEntries.take(10).forEach { entry ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border((1 * tableSizeFactor).dp, Color.Gray)
+                            ) {
+                                // Table data for each entry
+                                listOf(
+                                    entry.date.toString(),
+                                    entry.weight.toString(),
+                                    entry.waterIntake.toString(),
+                                    entry.caloriesIntake.toString()
+                                ).forEach { value ->
+                                    Box(modifier = Modifier.weight(1f).border((1 * tableSizeFactor).dp, Color.Gray)) {
+                                        Text(
+                                            value,
+                                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = (14 * tableSizeFactor).sp),
+                                            modifier = Modifier.padding((8 * tableSizeFactor).dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // No entries case
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding((8 * tableSizeFactor).dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "No entries recorded yet for this period.",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontSize = (14 * tableSizeFactor).sp),
+                                color = Color.Red
+                            )
+                        }
+                        Log.d(TAG, "No entries found for the current month: $currentMonth")
                     }
                 }
             }
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth(),
