@@ -3,6 +3,7 @@ package com.example.assignme.GUI.Community
 import android.net.Uri
 import android.widget.FrameLayout
 import android.widget.ListPopupWindow.MATCH_PARENT
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -35,6 +36,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +73,7 @@ import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import com.google.android.exoplayer2.MediaItem
+import kotlinx.coroutines.delay
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -259,14 +262,15 @@ fun ExpandedLayout(
     }
 }
 
-
 @Composable
 fun PostComposer(userViewModel: UserViewModel) {
     var selectedMediaUri by remember { mutableStateOf<Uri?>(null) }
     var postText by remember { mutableStateOf("") }
     var mediaType by remember { mutableStateOf<String?>(null) }
+    var showMessage by remember { mutableStateOf(false) } // 用于显示消息
     val userProfile by userViewModel.userProfile.observeAsState(UserProfile())
     val profilePictureUrl = userProfile.profilePictureUrl
+
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -351,14 +355,17 @@ fun PostComposer(userViewModel: UserViewModel) {
 
         Button(
             onClick = {
+                // 上传帖子
                 selectedMediaUri?.let { uri ->
                     userViewModel.addPost(postText, uri, mediaType ?: "")
                     postText = ""
                     selectedMediaUri = null
                     mediaType = null
+                    showMessage = true // 上传成功，显示消息
                 } ?: run {
                     userViewModel.addPost(postText, null, "")
                     postText = ""
+                    showMessage = true // 上传成功，显示消息
                 }
             },
             enabled = postText.isNotEmpty(),
@@ -375,7 +382,21 @@ fun PostComposer(userViewModel: UserViewModel) {
             Text("Post")
         }
     }
+    val context = LocalContext.current
+    // 显示成功消息的 Toast
+    if (showMessage) {
+        // 这个LaunchedEffect会在showMessage为true时启动
+        LaunchedEffect(showMessage) {
+            // 使用 LocalContext.current 来显示 Toast
+            Toast.makeText(context, "Post successfully!", Toast.LENGTH_SHORT).show()
+
+            // 等待一段时间后重置消息状态
+            kotlinx.coroutines.delay(2000) // 2秒后隐藏消息
+            showMessage = false // 重置状态
+        }
+    }
 }
+
 
 @Composable
 fun VideoPlayer(videoUri: Uri, modifier: Modifier = Modifier) {
@@ -422,6 +443,7 @@ fun PostItem(
     timestamp: Long,
     isMyPost: Boolean
 ) {
+    val context = LocalContext.current
     val currentUserId = userViewModel.userId.value ?: ""
     var liked by remember { mutableStateOf(likedUsers.contains(currentUserId)) }
     var currentLikes by remember { mutableStateOf(likes) }
@@ -433,7 +455,9 @@ fun PostItem(
     var showEditDialog by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
     var showFullscreenVideo by remember { mutableStateOf(false) }
-
+    var showReportSuccessMessage by remember { mutableStateOf(false) }
+    var showEditSuccessMessage by remember { mutableStateOf(false) }
+    var showDeleteSuccessMessage by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -480,6 +504,7 @@ fun PostItem(
                             DropdownMenuItem(onClick = {
                                 showMenu = false
                                 userViewModel.deletePost(postId)
+                                showDeleteSuccessMessage = true
                             }) {
                                 Text("Delete")
                             }
@@ -494,7 +519,14 @@ fun PostItem(
                     }
                 }
             }
-
+            // Toast 消息显示
+            if (showDeleteSuccessMessage) {
+                LaunchedEffect(showDeleteSuccessMessage) {
+                    Toast.makeText(context, "Delete successfully!", Toast.LENGTH_SHORT).show()
+                    kotlinx.coroutines.delay(2000) // 等待2秒
+                    showDeleteSuccessMessage = false // 重置状态
+                }
+            }
             // Post content
             Text(text = content, modifier = Modifier.padding(vertical = 8.dp))
 
@@ -619,20 +651,40 @@ fun PostItem(
                 editedContent = newContent
                 userViewModel.updatePost(postId, newContent)
                 showEditDialog = false
+                showEditSuccessMessage = true
             }
         )
     }
 
-    // Report Post Dialog
+    // Toast 消息显示
+    if (showEditSuccessMessage) {
+        LaunchedEffect(showEditSuccessMessage) {
+            Toast.makeText(context, "Edit successfully!", Toast.LENGTH_SHORT).show()
+            kotlinx.coroutines.delay(2000) // 等待2秒
+            showEditSuccessMessage = false // 重置状态
+        }
+    }
+
     if (showReportDialog) {
         ReportDialog(
             onDismiss = { showReportDialog = false },
             onReport = { reason, reportedBy ->
                 userViewModel.reportPost(postId, reason, reportedBy) // 传递举报者 ID
                 showReportDialog = false
+                showReportSuccessMessage = true // 显示成功消息
             },
             reportedBy = currentUserId // 传递当前用户 ID
         )
+    }
+
+
+    // Toast 消息显示
+    if (showReportSuccessMessage) {
+        LaunchedEffect(showReportSuccessMessage) {
+            Toast.makeText(context, "Report successfully!", Toast.LENGTH_SHORT).show()
+            kotlinx.coroutines.delay(2000) // 等待2秒
+            showReportSuccessMessage = false // 重置状态
+        }
     }
 }
 
@@ -784,7 +836,7 @@ fun CommentsDialog(
     onCommentAdded: () -> Unit
 ) {
     var commentText by remember { mutableStateOf("") }
-
+    var showToast by remember { mutableStateOf(false) }
     val comments by userViewModel.getCommentsForPost(postId).observeAsState(emptyList())
 
     Dialog(onDismissRequest = onDismiss) {
@@ -867,6 +919,7 @@ fun CommentsDialog(
                             userViewModel.addComment(postId, newComment)
                             onCommentAdded()
                             commentText = ""
+                            showToast = true
                         },
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = Color(0xFFE23E3E),
@@ -877,6 +930,15 @@ fun CommentsDialog(
                     }
                 }
             }
+        }
+    }
+    val context = LocalContext.current
+    // Toast 消息显示
+    if (showToast) {
+        LaunchedEffect(showToast) {
+            Toast.makeText(context, "Comment successfully!", Toast.LENGTH_SHORT).show()
+            kotlinx.coroutines.delay(2000) // 等待2秒
+            showToast = false // 重置状态
         }
     }
 }
