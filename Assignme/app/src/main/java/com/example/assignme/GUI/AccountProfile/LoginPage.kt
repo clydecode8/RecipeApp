@@ -408,7 +408,9 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                         } ?: run {
                             println("Error: signInResult is null")
                         }
-                    }) {
+                    },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                    ) {
                         Text("OK")
                     }
                 }
@@ -422,10 +424,12 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                 title = { Text("Error") },
                 text = { Text(errorMessage ?: "Unknown error") },
                 confirmButton = {
-                    Button(onClick = { showErrorDialog = false }) {
+                    Button(onClick = { showErrorDialog = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),) {
                         Text("OK")
                     }
-                }
+
+                },
             )
         }
     }

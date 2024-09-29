@@ -76,7 +76,8 @@ fun ReportsButton(navController: NavController) {
         onClick = { navController.navigate("manageReportPost") },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
     ) {
         Text("Reports")
         Spacer(Modifier.weight(1f))
