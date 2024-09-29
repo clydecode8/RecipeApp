@@ -33,6 +33,7 @@ import com.example.assignme.AndroidBar.AppTopBar
 import com.example.assignme.DataClass.Recipes
 import com.example.assignme.DataClass.WindowInfo
 import com.example.assignme.DataClass.rememberWidowInfo
+import com.example.assignme.GUI.Recipe.ui.theme.Orange
 import com.example.assignme.R
 import com.example.assignme.ViewModel.RecipeViewModel
 import com.example.assignme.ViewModel.UserProfile
@@ -229,8 +230,16 @@ fun TrendingSection(recipes: List<Recipes>, navController: NavController, window
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
-            TextButton(onClick = { navController.navigate("search_results") }) {
-                Text("See all")
+            TextButton(
+                onClick = { navController.navigate("search_results") },
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Orange // Set the text color for the button content
+                )
+            ) {
+                Text(
+                    "See all",
+                    color = Orange // Set the color of the text explicitly
+                )
             }
         }
 

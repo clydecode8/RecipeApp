@@ -67,6 +67,7 @@ import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.R
 import com.example.assignme.DataClass.Recipe
 import com.example.assignme.DataClass.Recipes
+import com.example.assignme.GUI.Recipe.ui.theme.Orange
 import com.example.assignme.ViewModel.MockThemeViewModel
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserProfileProvider
@@ -157,7 +158,7 @@ fun ProfilePage(
                         .fillMaxWidth() // Set the button to have maximum width
                         .padding(vertical = 8.dp) // Optional: Add vertical padding for spacing
                 ) {
-                    Text("My Recipes")
+                    Text("My Recipes", color=Orange)
                 }
             }
 
@@ -168,7 +169,7 @@ fun ProfilePage(
                     Tab(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
-                        text = { Text("Saved Recipes") }
+                        text = { Text("Saved Recipes", color=Orange) }
                     )
                 }
             }
@@ -317,7 +318,10 @@ fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvid
                 onClick = { navController.navigate("edit_profile") },
                 modifier = Modifier.padding(bottom = 5.dp)
             ) {
-                Text("Edit profile")
+                Text(
+                    "Edit profile",
+                    color = Orange // Set your desired color here
+                )
             }
         }
     }
