@@ -32,8 +32,9 @@ import com.example.assignme.GUI.AccountProfile.ForgotPasswordPage
 import com.example.assignme.GUI.AccountProfile.LoginPage
 import com.example.assignme.GUI.AccountProfile.ManageReportPostScreen
 import com.example.assignme.GUI.AccountProfile.ProfilePage
-import com.example.assignme.GUI.AccountProfile.RecipeApproveScreen
+import com.example.assignme.GUI.AccountProfile.RecipeAddScreen
 import com.example.assignme.GUI.AccountProfile.RegisterPage
+import com.example.assignme.GUI.AccountProfile.SavedRecipeScreen
 import com.example.assignme.GUI.AccountProfile.SocialFeedScreen
 import com.example.assignme.GUI.Community.SocialAppUI
 import com.example.assignme.GUI.DailyTracker.BarChart
@@ -69,7 +70,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
 
             AppFirstPage(navController, userViewModel)
         }
-        composable("editadmin"){
+        composable("edit_admin"){
 
             EditAdminProfileScreen(navController, userViewModel, themeViewModel)
         }
@@ -95,8 +96,8 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         }
 
         composable("profile_page"){
-
-            ProfilePage(navController, userViewModel, themeViewModel)
+            val viewModel: RecipeViewModel = viewModel()
+            ProfilePage(navController, userViewModel, themeViewModel, viewModel)
         }
 
         composable("edit_profile") {
@@ -109,9 +110,9 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             AdminDashboard(userViewModel, navController, themeViewModel)
         }
 
-        composable("approve_recipe"){
-
-            RecipeApproveScreen(navController, userViewModel)
+        composable("add_recipe"){
+            val viewModel: RecipeViewModel = viewModel() // Get a ViewModel scoped to CreateRecipe
+            RecipeAddScreen(navController, viewModel = viewModel, userViewModel, themeViewModel)
         }
 
         composable("manage_post"){
@@ -166,6 +167,28 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
             }
         }
 
+        composable("recipe_detail_page2/{recipeId}") { backStackEntry ->
+            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("profile_page") }
+            val recipeId = backStackEntry.arguments?.getString("recipeId")
+            val viewModel: RecipeViewModel = viewModel(parentEntry)
+
+            // Log the recipeId passed from the previous page
+            println("Navigated to recipe detail page with recipeId: $recipeId")
+
+            // Fetch the recipe by its ID
+            val recipe = viewModel.getSavedRecipeById(recipeId ?: "")
+            println("Retrieved: $recipe")
+
+            // Log whether the recipe was found
+            if (recipe != null) {
+                println("Recipe found: ${recipe.title}")
+                SavedRecipeScreen(recipe = recipe, userViewModel, viewModel = viewModel, onBackClick = { navController.popBackStack() })
+            } else {
+                println("Recipe not found for id: $recipeId")
+                Text("Recipe not found", modifier = Modifier.padding(16.dp))
+            }
+        }
+
         composable("create_recipe") {
             val viewModel: RecipeViewModel = viewModel() // Get a ViewModel scoped to CreateRecipe
             CreateRecipe(
@@ -177,7 +200,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         }
 
         composable("my_recipe_page") { backStackEntry ->
-            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("recipe_main_page") }
+            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("profile_page") }
             val viewModel: RecipeViewModel = viewModel(parentEntry)
             val windowInfo = rememberWidowInfo()
             MyRecipe(navController = navController, viewModel = viewModel, userViewModel, windowInfo )

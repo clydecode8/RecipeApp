@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,7 +23,9 @@ import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.material3.AlertDialog
@@ -30,6 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -44,6 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -51,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.assignme.AndroidBar.AppTopBar
 import com.example.assignme.DataClass.GoogleAuthUiClient
 import com.example.assignme.DataClass.SignInResult
 import com.example.assignme.R
@@ -64,7 +71,7 @@ import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.launch
 
 @Composable
-fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
+fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider) {
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -81,6 +88,7 @@ fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
                 dialogMessage = signInResult.errorMessage
                 showErrorDialog = true
             }
+
             signInResult.data != null -> {
                 // Check if the user is new or existing
                 if (signInResult.isNewUser) {
@@ -93,6 +101,7 @@ fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
                     showErrorDialog = true
                 }
             }
+
             else -> {
                 // If data is null and there is no error message, consider it as an unknown issue
                 dialogMessage = "Account already exists."
@@ -102,6 +111,55 @@ fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
     }
 
     fun handleRegistration() {
+        // Email validation using a regular expression pattern
+        val emailPattern = Regex("^[A-Za-z0-9+_.-]+@(.+)$")
+
+        // Validate each field
+        when {
+            username.isBlank() -> {
+                dialogMessage = "Username cannot be empty."
+                showErrorDialog = true
+                return
+            }
+
+            email.isBlank() -> {
+                dialogMessage = "Email cannot be empty."
+                showErrorDialog = true
+                return
+            }
+
+            !email.matches(emailPattern) -> {
+                dialogMessage = "Invalid email format."
+                showErrorDialog = true
+                return
+            }
+
+            password.isBlank() -> {
+                dialogMessage = "Password cannot be empty."
+                showErrorDialog = true
+                return
+            }
+
+            password.length < 6 -> {
+                dialogMessage = "Password must be at least 6 characters."
+                showErrorDialog = true
+                return
+            }
+
+            confirmpassword.isBlank() -> {
+                dialogMessage = "Confirm password cannot be empty."
+                showErrorDialog = true
+                return
+            }
+
+            password != confirmpassword -> {
+                dialogMessage = "Passwords do not match."
+                showErrorDialog = true
+                return
+            }
+        }
+
+        // If all validations pass, proceed to submit
         submitAdmin(
             name = username,
             email = email,
@@ -115,7 +173,6 @@ fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
                 dialogMessage = "User registered successfully."
                 println("Success callback triggered.")
                 showSuccessDialog = true
-
             },
             onFailure = {
                 dialogMessage = it
@@ -126,175 +183,175 @@ fun AddAdmin(navController: NavController, userViewModel: UserProfileProvider){
 
 
 
-
-
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .safeContentPadding()
-            .statusBarsPadding()
-    ) {
-
-        // Define variables to hold screen width and height
-        val screenHeight = constraints.maxHeight
-        val screenWidth = constraints.maxWidth
-
-        // Back arrow Row at the top
-        Row(
-            modifier = Modifier
-                .padding(start = 15.dp, top = 50.dp)
-                .fillMaxWidth()
-                .safeContentPadding()
-                .statusBarsPadding(),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back_arrow),
-                contentDescription = "Back",
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = "Login Page",
+                navController = navController,
                 modifier = Modifier
-                    .size(30.dp)
-                    .clickable {
-                        // Navigate back
-                        navController.navigateUp()
-                    },
-                tint = Color.Black
             )
-        }
+        },
+    ) { innerPadding ->
 
-        // Column containing text fields and other components
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 16.dp, end = 16.dp, top = (screenHeight * 0.03f).dp)
                 .safeContentPadding()
-                .statusBarsPadding(),
-            verticalArrangement = Arrangement.Center
+                .statusBarsPadding()
         ) {
-            // Heading Text
-            Text(
-                text = "Input details.",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.height(8.dp))
 
-            // Text Fields
-            Column(
+            // Define variables to hold screen width and height
+            val screenHeight = constraints.maxHeight
+            val screenWidth = constraints.maxWidth
+
+
+            // LazyColumn containing text fields and other components
+            LazyColumn(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
+                    .padding(innerPadding)
                     .safeContentPadding()
-                    .statusBarsPadding()
-                    .padding(end = 15.dp, top = 20.dp)
+                    .statusBarsPadding(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                TextField(
-                    value = username,
-                    onValueChange = { newText -> username = newText },
-                    placeholder = { Text(text = "Username") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 18.dp)
-                )
+                item {
+                    // Text Fields
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .safeContentPadding()
+                            .statusBarsPadding()
+                            .padding(end = 15.dp, top = 20.dp, start = 15.dp)
+                    ) {
+                        TextField(
+                            value = username,
+                            onValueChange = { newText -> username = newText },
+                            placeholder = { Text(text = "Username") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 18.dp)
+                        )
 
-                TextField(
-                    value = email,
-                    onValueChange = { newText -> email = newText },
-                    placeholder = { Text(text = "Email") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 18.dp)
-                )
+                        TextField(
+                            value = email,
+                            onValueChange = { newText -> email = newText },
+                            placeholder = { Text(text = "Email") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 18.dp)
+                        )
 
-                TextField(
-                    value = password,
-                    onValueChange = { newText -> password = newText },
-                    placeholder = { Text(text = "Password") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 18.dp)
-                )
+                        TextField(
+                            value = password,
+                            onValueChange = { newText -> password = newText },
+                            placeholder = { Text(text = "Password") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Password
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 18.dp)
+                        )
 
-                TextField(
-                    value = confirmpassword,
-                    onValueChange = { newText -> confirmpassword = newText },
-                    placeholder = { Text(text = "Confirm Password") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 18.dp)
-                )
+                        TextField(
+                            value = confirmpassword,
+                            onValueChange = { newText -> confirmpassword = newText },
+                            placeholder = { Text(text = "Confirm Password") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Password
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 18.dp)
+                        )
+                    }
+                }
+
+                item {
+                    // Button
+                    Button(
+                        onClick = {
+                            handleRegistration()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                        .padding(start = 15.dp, end = 15.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Register")
+                    }
+                }
+
+                item {
+                    // Dialog logic
+                    if (showErrorDialog) {
+                        ErrorDialogAdmin(
+                            errorMessage = dialogMessage,
+                            onDismiss = { showErrorDialog = false }
+                        )
+                    }
+
+                    if (showSuccessDialog) {
+                        SuccessDialogAdmin(
+                            message = dialogMessage,
+                            onDismiss = {
+                                showSuccessDialog = false
+                                navController.navigate("admin_page")
+                            }
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                item {
+                    // Divider section with "You are held responsible for creating an account."
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .safeContentPadding()
+                            .statusBarsPadding()
+                            .padding(start = 15.dp, end = 15.dp)
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp),
+                            thickness = 1.dp,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = "You are held responsible for creating an account.",
+                            fontSize = 16.sp
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp),
+                            thickness = 1.dp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
-
-            // Button
-            Button(
-                onClick = {
-                    handleRegistration()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Register")
-            }
-
-            //Dialog logic
-            if (showErrorDialog) {
-                ErrorDialogAdmin(
-                    errorMessage = dialogMessage,
-                    onDismiss = { showErrorDialog = false }
-                )
-            }
-
-            if (showSuccessDialog) {
-                SuccessDialogAdmin(
-                    message = dialogMessage,
-                    onDismiss = {
-                        showSuccessDialog = false
-                        navController.navigate("admin_page") }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Divider section with "or register with"
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .safeContentPadding()
-                    .statusBarsPadding()
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp),
-                    thickness = 1.dp,
-                    color = Color.Gray
-                )
-                Text(text = "You are held responsible for creating an account.", color = Color.Black, fontSize = 2.em)
-                HorizontalDivider(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp),
-                    thickness = 1.dp,
-                    color = Color.Gray
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
-
-
     }
 
 }
-
-
 
 
 

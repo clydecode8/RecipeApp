@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.assignme.DataClass.Recipes
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -19,6 +20,10 @@ import java.util.UUID
 
 
 class UserViewModel : ViewModel(), UserProfileProvider {
+
+    private val _savedRecipes = MutableLiveData<List<Recipes>>()
+    override val savedRecipes: LiveData<List<Recipes>> = _savedRecipes
+
     private val _userId = MutableLiveData<String>()
     override val userId: LiveData<String> get() = _userId
 
@@ -95,6 +100,9 @@ class UserViewModel : ViewModel(), UserProfileProvider {
             }
     }
 
+    override fun fetchSavedRecipes(s: String){
+
+    }
 
 
     // Function to update the user profile in the ViewModel (Google)

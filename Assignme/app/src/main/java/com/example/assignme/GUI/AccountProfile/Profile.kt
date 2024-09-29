@@ -1,13 +1,16 @@
 package com.example.assignme.GUI.AccountProfile
 
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,11 +19,14 @@ import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ScrollableTabRow
 import androidx.compose.material.TextButton
-import androidx.compose.material.darkColors
-import androidx.compose.material.lightColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -28,7 +34,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -37,6 +42,8 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +53,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,53 +61,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
 import com.example.assignme.AndroidBar.AppBottomNavigation
 import com.example.assignme.R
 import com.example.assignme.DataClass.Recipe
+import com.example.assignme.DataClass.Recipes
 import com.example.assignme.ViewModel.MockThemeViewModel
 import com.example.assignme.ViewModel.UserProfile
 import com.example.assignme.ViewModel.UserProfileProvider
 import com.example.assignme.ViewModel.MockUserViewModel
+import com.example.assignme.ViewModel.RecipeViewModel
 import com.example.assignme.ViewModel.ThemeViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ProfilePage(navController: NavController,
-                userViewModel: UserProfileProvider,
-                themeViewModel: ThemeViewModel) {
 
+@Composable
+fun ProfilePage(
+    navController: NavController,
+    userViewModel: UserProfileProvider,
+    themeViewModel: ThemeViewModel,
+    recipeViewModel: RecipeViewModel
+) {
     val currentTheme by rememberUpdatedState(themeViewModel.isDarkTheme.value)
     var showDialog by remember { mutableStateOf(false) }
-    // Sample data
-    val recipes = listOf(
-        Recipe(
-            title = "How to make Italian Spaghetti at home",
-            calories = "1000 kcal",
-            duration = "40 min",
-            imageRes = R.drawable.back_arrow,
-            action = 1
-        ),
-        Recipe(
-            title = "Simple chicken meal prep dishes",
-            calories = "500 kcal",
-            duration = "40 min",
-            imageRes = R.drawable.background,
-            action = 0
-        ),
-        Recipe(
-            title = "Simple chicken meal prep dishes",
-            calories = "500 kcal",
-            duration = "40 min",
-            imageRes = R.drawable.background,
-            action = 1
-        )
-        // Add more recipes here
-    )
-
     var selectedTab by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") } // State for search query
 
+    val savedRecipes by recipeViewModel.savedRecipes.collectAsState()
+    val userId by userViewModel.userId.observeAsState()
+
+    // Fetch the saved recipes when the screen is displayed
+    LaunchedEffect(Unit) {
+        userId?.let { recipeViewModel.fetchSavedRecipes(it) } // Ensure userId is not null
+    }
+    println(savedRecipes)
     Scaffold(
         topBar = {
             SmallTopAppBar(
@@ -113,23 +108,22 @@ fun ProfilePage(navController: NavController,
                     )
                 },
                 actions = {
-                    IconButton(onClick = { showDialog = true })
-                    {
+                    IconButton(onClick = { showDialog = true }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.moreoptions2), // Replace with your icon resource
+                            painter = painterResource(id = R.drawable.moreoptions2),
                             contentDescription = "More actions",
                             modifier = Modifier.size(25.dp)
-
                         )
                     }
-                    // Display the theme selection dialog
+                    // Theme selection dialog
                     ThemeSelectionDialog(
                         isVisible = showDialog,
                         onDismiss = { showDialog = false },
+                        navController = navController,
                         onThemeSelected = { selectedTheme ->
                             themeViewModel.isDarkTheme.value = (selectedTheme == "Dark")
-                            themeViewModel.toggleTheme() // Update the theme preference
-                            showDialog = false // Dismiss the dialog after selection
+                            themeViewModel.toggleTheme()
+                            showDialog = false
                         }
                     )
                 },
@@ -138,92 +132,125 @@ fun ProfilePage(navController: NavController,
         },
         bottomBar = { AppBottomNavigation(navController) }
     ) { paddingValues ->
-        // Wrap the Column with a Box and set the background color to white
-        Box(
+
+        // Wrap everything in a LazyColumn for vertical scrolling
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            LazyColumn(
+            item {
+                // Profile Header
+                ProfileHeader(navController, userViewModel)
+            }
+
+            // Add a button with max width above the TabRow
+            item {
+                OutlinedButton(
+                    onClick = {
+                        // Navigate to my_recipe_page with the necessary ViewModel
+                        navController.navigate("my_recipe_page")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth() // Set the button to have maximum width
+                        .padding(vertical = 8.dp) // Optional: Add vertical padding for spacing
+                ) {
+                    Text("My Recipes")
+                }
+            }
+
+
+            item {
+                // TabRow for saved/created recipes
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = { Text("Saved Recipes") }
+                    )
+                }
+            }
+
+            item {
+                // Search Bar
+                SearchBar(searchQuery, onQueryChange = { newQuery -> searchQuery = newQuery })
+            }
+
+            // Filter recipes based on search query
+            val filteredRecipes = savedRecipes.filter { recipe ->
+                recipe.recipe.title.contains(searchQuery, ignoreCase = true)
+            }
+
+            // Display the filtered recipes in a grid
+            items(filteredRecipes) { savedUserRecipe ->
+                RecipeCard(
+                    recipe = savedUserRecipe.recipe, // Access the recipe property
+                    modifier = Modifier.padding(8.dp),
+                    onClick = {
+                        println("Recipe ${savedUserRecipe.recipe.id}")
+                        navController.navigate("recipe_detail_page2/${savedUserRecipe.recipe.id}")
+                        println("Navigated to recipe detail page with recipeId: ${savedUserRecipe.recipe.id}")
+                    }
+                )
+            }
+        }
+    }
+
+}
+
+
+
+
+
+
+
+@Composable
+fun RecipeCard(
+    recipe: Recipes,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .size(200.dp, 250.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column {
+
+
+            Image(
+                painter = if (recipe.imageUrl.isNotEmpty()) {
+                    rememberAsyncImagePainter(recipe.imageUrl) // Load the image from the URL
+                } else {
+                    painterResource(id = R.drawable.profile) // Use a placeholder image
+                },
+                contentDescription = "Recipe Image",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                item {
-                    ProfileHeader(navController, userViewModel)
-
-                    TabRow(
-                        selectedTabIndex = selectedTab,
-
-                    ) {
-
-                        Tab(
-                            selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 },
-                            text = { Text("Saved Recipes") }
-                        )
-                        Tab(
-                            selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 },
-                            text = { Text("Created Recipes") }
-
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Spacer(modifier = Modifier.height(16.dp))
-                    SearchBar(searchQuery, onQueryChange = { newQuery -> searchQuery = newQuery })
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
-                val filteredRecipes = recipes.filter { recipe ->
-                    // Filter by selected tab (action) and search query
-                    recipe.action == selectedTab && recipe.title.contains(searchQuery, ignoreCase = true)
-                }
-
-                items(filteredRecipes) { recipe ->
-                    RecipeCard(
-                        title = recipe.title,
-                        calories = recipe.calories,
-                        duration = recipe.duration,
-                        imageRes = recipe.imageRes
-                    )
-                    Spacer(modifier = Modifier.height(16.dp)) // Add space between cards
+                    .height(150.dp),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = recipe.title,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(text = "${recipe.totalCalories} kCal")
+                    Text(text = recipe.cookTime)
                 }
             }
         }
-
     }
 }
-
-@Composable
-fun ThemeSelectionDialog(
-    isVisible: Boolean,
-    onDismiss: () -> Unit,
-    onThemeSelected: (String) -> Unit
-) {
-    if (isVisible) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(text = "Select Theme") },
-            text = {
-                Column {
-                    TextButton(onClick = { onThemeSelected("Dark") }) {
-                        Text(text = "Light Theme")
-                    }
-                    TextButton(onClick = { onThemeSelected("Light") }) {
-                        Text(text = "Dark Theme")
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
-
 
 @Composable
 fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvider) {
@@ -234,7 +261,6 @@ fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvid
             .safeContentPadding()
             .statusBarsPadding() // Ensure the Row takes full width
     ) {
-
         // Observe user ID from the view model
         val userId by userViewModel.userId.observeAsState()
 
@@ -247,7 +273,6 @@ fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvid
         userId?.let {
             // Fetch profile data based on userId if not already fetched
             if (userProfile.name == null) {
-
                 userViewModel.fetchUserProfile(it)
             }
 
@@ -281,7 +306,7 @@ fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvid
 
                 // Name
                 Text(
-                    text = "${userProfile.name}", //change name
+                    text = "${userProfile.name}",
                     fontSize = 18.sp,
                     modifier = Modifier.padding(top = 8.dp) // Add space between picture and name
                 )
@@ -293,7 +318,6 @@ fun ProfileHeader(navController: NavController, userViewModel: UserProfileProvid
                 modifier = Modifier.padding(bottom = 5.dp)
             ) {
                 Text("Edit profile")
-
             }
         }
     }
@@ -309,42 +333,56 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
     )
 }
 
+
 @Composable
-fun RecipeCard(title: String, calories: String, duration: String, imageRes: Int) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(4.dp)  // Fixed elevation
-    ) {
-        Box {
-            Image(
-                painter = painterResource(id = imageRes),
-                contentDescription = title,
-                modifier = Modifier
-                    .height(200.dp)
-                    .fillMaxWidth(),
-                contentScale = ContentScale.Crop
-            )
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp)
-            ) {
-                Text(title, fontWeight = FontWeight.Bold)
-                Text("$calories | $duration")
+fun ThemeSelectionDialog(
+    isVisible: Boolean,
+    onDismiss: () -> Unit,
+    navController: NavController,
+    onThemeSelected: (String) -> Unit
+) {
+    if (isVisible) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(text = "Select Theme") },
+            text = {
+                Column {
+                    TextButton(onClick = { onThemeSelected("Dark") }) {
+                        Text(text = "Light Theme")
+                    }
+                    TextButton(onClick = { onThemeSelected("Light") }) {
+                        Text(text = "Dark Theme")
+                    }
+                    TextButton(onClick = { FirebaseAuth.getInstance().signOut()
+                        navController.navigate("main_page")}){
+                        Text(text = "Sign Out")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
             }
-        }
+        )
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewProfile() {
+fun signOut(){
 
-    ProfilePage(
-        navController = rememberNavController(),
-        userViewModel = MockUserViewModel(),
-        themeViewModel = MockThemeViewModel()
-    )
+
 }
+// Add this closing brace to complete the function
+
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewProfile() {
+//
+////    ProfilePage(
+////        navController = rememberNavController(),
+////        userViewModel = MockUserViewModel(),
+////        themeViewModel = MockThemeViewModel(),
+////    )
+//}
 
 

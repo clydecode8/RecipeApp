@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.material3.AlertDialog
@@ -32,6 +34,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -46,11 +50,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.assignme.AndroidBar.AppTopBar
 import com.example.assignme.DataClass.GoogleAuthUiClient
 import com.example.assignme.R
 import com.example.assignme.DataClass.SignInResult
@@ -91,8 +98,15 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
     }
 
     //Google sign in
-    fun handleSignInResult(signInResult: SignInResult, navController: NavController, userViewModel: UserProfileProvider) {
-        Log.d("HandleSignInResult", "Handling sign-in result. Is new user: ${signInResult.isNewUser}")
+    fun handleSignInResult(
+        signInResult: SignInResult,
+        navController: NavController,
+        userViewModel: UserProfileProvider
+    ) {
+        Log.d(
+            "HandleSignInResult",
+            "Handling sign-in result. Is new user: ${signInResult.isNewUser}"
+        )
 
         when {
             signInResult.errorMessage != null -> {
@@ -100,15 +114,20 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                 dialogMessage = signInResult.errorMessage
                 showErrorDialog = true
             }
+
             signInResult.data != null -> {
                 if (signInResult.isNewUser) {
                     Log.d("HandleSignInResult", "New user detected. Redirecting to registration.")
-                    dialogMessage = "You need to register an account first. Redirecting to the registration page."
+                    dialogMessage =
+                        "You need to register an account first. Redirecting to the registration page."
                     showErrorDialog = true
                     // Ensure this route is correct
                     navController.navigate("registrationScreen")
                 } else {
-                    Log.d("HandleSignInResult", "Existing user logged in successfully. Navigating to home.")
+                    Log.d(
+                        "HandleSignInResult",
+                        "Existing user logged in successfully. Navigating to home."
+                    )
                     dialogMessage = "Login successful. Welcome back!"
                     showSuccessDialog = true
 
@@ -125,6 +144,7 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                     }
                 }
             }
+
             else -> {
                 Log.e("HandleSignInResult", "Unknown issue occurred. No data and no error message.")
                 dialogMessage = "An unknown issue occurred. Please try again."
@@ -157,226 +177,229 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
         }
     }
 
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeContentPadding()
-            .statusBarsPadding()
-    ) {
-        // Define variables to hold screen width and height
-        val screenHeight = constraints.maxHeight
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = "Login Page",
+                navController = navController,
+                modifier = Modifier
+            )
+        },
+        bottomBar = { /* Add a bottom bar if needed */ }
+    ) { innerPadding ->
 
-        LazyColumn(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 15.dp, end = 15.dp, top = 50.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
+                .safeContentPadding()
+                .statusBarsPadding()
         ) {
-            // Back arrow
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back_arrow),
-                        contentDescription = "Back",
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clickable {
-                                // Navigate back
-                                navController.navigateUp()
-                            }
-                    )
-                }
-            }
+            // Define variables to hold screen width and height
+            val screenHeight = constraints.maxHeight
 
-            // Welcome text
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 20.dp),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Text(
-                        text = "Welcome back! Glad to see you, again!",
-                        fontSize = 30.sp,
-                        lineHeight = 36.sp, // Adjust lineHeight to increase spacing between lines
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(end = 15.dp),
-                    )
-                }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 15.dp, end = 15.dp, top = 50.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
 
-                Spacer(modifier = Modifier.height(20.dp)) // Space between texts and text fields
-            }
 
-            // Text Fields
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 15.dp, top = 20.dp) // Reduced top padding
-                ) {
-                    TextField(
-                        value = email,
-                        onValueChange = { newText -> email = newText },
-                        placeholder = { Text(text = "Enter your email") },
+                // Welcome text
+                item {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 18.dp)
-                    )
-
-                    TextField(
-                        value = password,
-                        onValueChange = { newText -> password = newText },
-                        placeholder = { Text(text = "Enter your password") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 18.dp)
-                    )
-
-                    // Forgot Password text
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .padding(top = 8.dp)
+                            .padding(top = 20.dp),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Top
                     ) {
                         Text(
-                            text = "Forgot Password?",
-                            modifier = Modifier.clickable {
-                                // Navigate to ForgotPassword screen
-                                navController.navigate("forgot_password_page")
-                            }
+                            text = "Welcome back! Glad to see you, again!",
+                            fontSize = 30.sp,
+                            lineHeight = 36.sp, // Adjust lineHeight to increase spacing between lines
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(end = 15.dp),
                         )
                     }
 
-                    Spacer(modifier = Modifier.height((screenHeight * 0.03f).dp)) // Pushes the button to the bottom
+                    Spacer(modifier = Modifier.height(20.dp)) // Space between texts and text fields
                 }
-            }
 
-            // Login Button
-            item {
-                Button(
-                    onClick = {
-                        // Call login function
-                        login(
-                            auth, db, email, password, navController,
-                            onError = {
-                                // On error, show error dialog
-                                errorMessage = it
-                                showErrorDialog = true
-                            },
+                // Text Fields
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 15.dp, top = 20.dp) // Reduced top padding
+                    ) {
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { newText -> email = newText },
+                            placeholder = { Text(text = "Enter your email") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 18.dp)
+                        )
 
-                            onSuccess = { result ->
-                                signInResult = result
-                                // Safely access signInResult
-                                signInResult?.data?.userId?.let { userId ->
-                                    println("Sign-in successful: $userId")
-                                } // On success, show success dialog
-                                showSuccessDialog = true
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { newText -> password = newText },
+                            placeholder = { Text(text = "Enter your password") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Password
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 18.dp)
+                        )
+
+                        // Forgot Password text
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .padding(top = 8.dp)
+                        ) {
+                            Text(
+                                text = "Forgot Password?",
+                                modifier = Modifier.clickable {
+                                    // Navigate to ForgotPassword screen
+                                    navController.navigate("forgot_password_page")
+                                }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height((screenHeight * 0.03f).dp)) // Pushes the button to the bottom
+                    }
+                }
+
+                // Login Button
+                item {
+                    Button(
+                        onClick = {
+                            // Call login function
+                            login(
+                                auth, db, email, password, navController,
+                                onError = {
+                                    // On error, show error dialog
+                                    errorMessage = it
+                                    showErrorDialog = true
+                                },
+
+                                onSuccess = { result ->
+                                    signInResult = result
+                                    // Safely access signInResult
+                                    signInResult?.data?.userId?.let { userId ->
+                                        println("Sign-in successful: $userId")
+                                    } // On success, show success dialog
+                                    showSuccessDialog = true
+                                }
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Login")
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp)) // Space below the button
+                }
+
+                // Divider section with "or login with"
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp),
+                            thickness = 1.dp,
+                        )
+                        Text(text = "or login with")
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp),
+                            thickness = 1.dp,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp)) // Space below the divider
+                }
+
+                // Google Icon Button
+                // Google Icon Button
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth() // Fill the maximum width of the parent
+                            .padding(horizontal = 16.dp) // Optional padding on the sides
+                    ) {
+                        Button(
+                            onClick = { signInGoogle() },
+                            modifier = Modifier
+                                .align(Alignment.Center) // Center the button in the Box
+                                .height(54.dp)
+                                .fillMaxWidth(), // Make the button fill the width of the Box
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8ECF4)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.google), // Replace with your drawable resource
+                                contentDescription = "Google Login",
+                                modifier = Modifier.size(24.dp),
+                                tint = Color.Unspecified
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp)) // Space below the Google button
+                }
+
+
+                // Registration Text
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Don't have an account? ",
+                            fontSize = 12.sp,
+                        )
+                        Text(
+                            text = "Register now",
+                            color = Color.Blue,
+                            fontSize = 12.sp,
+                            modifier = Modifier.clickable {
+                                // Navigate to Register screen
+                                navController.navigate("register_page")
                             }
                         )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Login")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp)) // Space below the button
-            }
-
-            // Divider section with "or login with"
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp),
-                        thickness = 1.dp,
-                    )
-                    Text(text = "or login with")
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp),
-                        thickness = 1.dp,
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp)) // Space below the divider
-            }
-
-            // Google Icon Button
-            item {
-                Button(
-                    onClick = { signInGoogle() },
-                    modifier = Modifier
-
-                        .height(54.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8ECF4)),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.google), // Replace with your drawable resource
-                        contentDescription = "Google Login",
-                        modifier = Modifier.size(24.dp),
-                        tint = Color.Unspecified
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp)) // Space below the Google button
-            }
-
-            // Registration Text
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Don't have an account? ",
-                        fontSize = 12.sp,
-                    )
-                    Text(
-                        text = "Register now",
-                        color = Color.Blue,
-                        fontSize = 12.sp,
-                        modifier = Modifier.clickable {
-                            // Navigate to Register screen
-                            navController.navigate("register_page")
-                        }
-                    )
+                    }
                 }
             }
         }
-    }
 
 
-
-    // Success AlertDialog
-    if (showSuccessDialog) {
-        AlertDialog(
-            onDismissRequest = { showSuccessDialog = false },
-            title = { Text("Success") },
-            text = { Text("You have successfully logged in.") },
-            confirmButton = {
-                Button(onClick = {
+        // Success AlertDialog
+        if (showSuccessDialog) {
+            AlertDialog(
+                onDismissRequest = { showSuccessDialog = false },
+                title = { Text("Success") },
+                text = { Text("You have successfully logged in.") },
+                confirmButton = {
+                    Button(onClick = {
                         // Debugging: Ensure signInResult is not null
                         signInResult?.let { result ->
                             println("Dialog confirm button clicked. signInResult: $signInResult")
@@ -386,27 +409,27 @@ fun LoginPage(navController: NavController, userViewModel: UserProfileProvider) 
                             println("Error: signInResult is null")
                         }
                     }) {
-                    Text("OK")
+                        Text("OK")
+                    }
                 }
-            }
-        )
-    }
+            )
+        }
 
-    // Error AlertDialog
-    if (showErrorDialog) {
-        AlertDialog(
-            onDismissRequest = { showErrorDialog = false },
-            title = { Text("Error") },
-            text = { Text(errorMessage ?: "Unknown error") },
-            confirmButton = {
-                Button(onClick = { showErrorDialog = false }) {
-                    Text("OK")
+        // Error AlertDialog
+        if (showErrorDialog) {
+            AlertDialog(
+                onDismissRequest = { showErrorDialog = false },
+                title = { Text("Error") },
+                text = { Text(errorMessage ?: "Unknown error") },
+                confirmButton = {
+                    Button(onClick = { showErrorDialog = false }) {
+                        Text("OK")
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
-
 //Firebase
 fun handleSignInResult2(result: SignInResult, navController: NavController, userViewModel: UserProfileProvider) {
 
