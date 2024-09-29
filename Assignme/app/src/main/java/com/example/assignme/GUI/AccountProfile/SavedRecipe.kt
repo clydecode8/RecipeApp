@@ -135,13 +135,7 @@ fun SavedRecipeScreen(recipe: Recipes, userModel:UserViewModel, viewModel: Recip
                 }
             )
         },
-        bottomBar = {
-            BottomBar(recipe.id,
-                userModel.userId.value.toString(),
-                onAddToSchedule = { /* Handle Add to Schedule */ },
-                onShare = { /* Handle Share */ })
 
-        },
         contentWindowInsets = WindowInsets.navigationBars
 
     ) { padding ->

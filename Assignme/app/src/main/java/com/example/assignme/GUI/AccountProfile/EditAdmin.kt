@@ -360,7 +360,7 @@ fun EditAdminProfileScreen(
                                 text = when (selectedCountry) {
                                     AdminCountry.MALAYSIA -> "+60 "
                                     AdminCountry.SINGAPORE -> "+65 "
-                                    AdminCountry.DEFAULT -> ""
+                                    AdminCountry.DEFAULT -> "+60 "
                                 },
 
                                 modifier = Modifier.padding(start = 8.dp) // Add some space after the prefix
@@ -862,13 +862,13 @@ private fun saveUserProfile(
         isPhoneNumberValid = when (selectedCountry) {
             AdminCountry.MALAYSIA -> cleanedPhoneNumber.length in 9..10 // Must be 10 or 11 digits
             AdminCountry.SINGAPORE -> cleanedPhoneNumber.length == 8 // Must be exactly 8 digits
-            else -> false
+            else -> cleanedPhoneNumber.length in 9..10 // Must be 10 or 11 digits
         }
 
         val prefix = when (selectedCountry) {
             AdminCountry.MALAYSIA -> "+60"
             AdminCountry.SINGAPORE -> "+65"
-            else -> null
+            else -> "+60"
         }
 
         if (isPhoneNumberValid && prefix != null) {

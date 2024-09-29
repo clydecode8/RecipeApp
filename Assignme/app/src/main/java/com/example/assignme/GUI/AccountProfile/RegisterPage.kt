@@ -291,7 +291,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                         pageSize = PageSize.Fill,
                         modifier = Modifier
                             .fillMaxWidth() // Ensure the pager fills the width
-                            .height(450.dp) // Fixed height to avoid resizing
+
                     ) { page ->
                         when (page) {
                             0 -> EmailRegistration(
@@ -837,7 +837,8 @@ fun ErrorDialog(
         title = { Text("Error") },
         text = { Text(errorMessage) },
         confirmButton = {
-            Button(onClick = onDismiss) {
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                onClick = onDismiss) {
                 Text("OK")
             }
         }
@@ -854,7 +855,8 @@ fun SuccessDialog(
         title = { Text("Success") },
         text = { Text(message) },
         confirmButton = {
-            Button(onClick = onDismiss) {
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                onClick = onDismiss) {
                 Text("OK")
             }
         }
