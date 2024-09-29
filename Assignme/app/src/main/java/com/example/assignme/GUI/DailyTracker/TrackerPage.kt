@@ -51,6 +51,7 @@ import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.FloatEntry
 import com.patrykandpatrick.vico.core.formatter.DecimalFormatValueFormatter
 
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TrackerPage(
@@ -125,8 +126,8 @@ fun TrackerPage(
                         .fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFBBBABA),  // Light blue background
-                        contentColor = Color.Black           // Content (text, icons) color
+//                        containerColor = Color(0xFFBBBABA),  // Light blue background
+//                        contentColor = Color.Black           // Content (text, icons) color
                     )
                 ) {
                     Column(
@@ -214,8 +215,8 @@ fun TrackerPage(
                         .fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFBBBABA),  // Light blue background
-                        contentColor = Color.Black           // Content (text, icons) color
+//                        containerColor = Color(0xFFBBBABA),  // Light blue background
+//                        contentColor = Color.Black           // Content (text, icons) color
                     )
                 ) {
                     Column(
@@ -303,7 +304,7 @@ fun TrackerPage(
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Change color as needed
                     ) {
-                        Text("Transformations", color = Color.White)
+                        Text("Transformations")
                     }
 
                     Spacer(modifier = Modifier.width(16.dp)) // Optional spacing between buttons
@@ -316,7 +317,7 @@ fun TrackerPage(
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)) // Use the colors parameter
                     ) {
-                        Text("Daily Analysis", color = Color.White)
+                        Text("Daily Analysis")
                     }
                 }
             }
@@ -335,8 +336,8 @@ fun WaterIntakeSection(
             .fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFBBBABA),  // Light blue background
-            contentColor = Color.Black           // Content (text, icons) color
+//            containerColor = Color(0xFFBBBABA),  // Light blue background
+//            contentColor = Color.Black           // Content (text, icons) color
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
