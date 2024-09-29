@@ -1029,7 +1029,7 @@ fun PasswordInputAdminDialog(
             }
         },
         confirmButton = {
-            Button(
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 onClick = {
                     if (password.isBlank()) {
                         passwordError = true // Set error if password is blank
@@ -1043,7 +1043,8 @@ fun PasswordInputAdminDialog(
             }
         },
         dismissButton = {
-            Button(onClick = {
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
+                onClick = {
                 onCancel() // Call onCancel when dismissing the dialog
                 onDismiss() // Dismiss the dialog
             }) {
@@ -1061,8 +1062,9 @@ fun SuccessDialogAdmin2(navController: NavController ,onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
-            Button(
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 onClick = {
+
                     // Perform navigation
                     navController.navigate("admin_page")
                     // Dismiss the dialog after navigation
@@ -1082,7 +1084,7 @@ fun ErrorDialogAdmin2(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
-            Button(
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 onClick = { onDismiss() }
             ) {
                 Text("OK")
@@ -1098,7 +1100,7 @@ fun ErrorDialogAdmin3(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
-            Button(
+            Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE23E3E)),
                 onClick = { onDismiss() }
             ) {
                 Text("OK")
