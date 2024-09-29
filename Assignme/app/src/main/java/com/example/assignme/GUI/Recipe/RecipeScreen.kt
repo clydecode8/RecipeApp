@@ -396,12 +396,6 @@ fun BottomBar(recipeId: String,
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        IconButton(onClick = onShare) {
-            Icon(
-                imageVector = Icons.Default.Share,
-                contentDescription = "Share Recipe",
-                modifier = Modifier.size(32.dp)
-            )
-        }
+
     }
 }
