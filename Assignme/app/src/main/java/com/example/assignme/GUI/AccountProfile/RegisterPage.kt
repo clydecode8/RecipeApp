@@ -84,7 +84,6 @@ import com.example.assignme.ViewModel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.android.gms.auth.api.identity.Identity
-import com.google.android.gms.common.api.UnsupportedApiCallException
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
@@ -168,29 +167,9 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
 
     fun signInGoogle() {
         coroutineScope.launch {
-            try {
-                val signInIntentSender = googleAuthUiClient.signIn()
-                // Check if One Tap is supported
-                if (signInIntentSender == null) {
-                    // Proceed to standard sign-in if One Tap is not available
-                    val standardSignInResult = googleAuthUiClient.standardGoogleRegister()
-                    handleSignInResult(standardSignInResult, navController)
-                } else {
-                    // Launch the intent for One Tap sign-in
-                    launcher.launch(IntentSenderRequest.Builder(signInIntentSender).build())
-                }
-            } catch (e: UnsupportedApiCallException) {
-                // Handle the case where One Tap is not supported
-                Log.e("SignInError", "One Tap sign-in not supported: ${e.message}")
-                // Fallback to standard sign-in
-                val standardSignInResult = googleAuthUiClient.standardGoogleSignIn()
-                handleSignInResult(standardSignInResult, navController)
-            } catch (e: Exception) {
-                // Handle any other exceptions
-                Log.e("SignInError", "Error during Google sign-in: ${e.message}")
-                // Fallback to standard sign-in
-                val standardSignInResult = googleAuthUiClient.standardGoogleSignIn()
-                handleSignInResult(standardSignInResult, navController)
+            val signInIntentSender = googleAuthUiClient.signIn()
+            signInIntentSender?.let {
+                launcher.launch(IntentSenderRequest.Builder(it).build())
             }
         }
     }
