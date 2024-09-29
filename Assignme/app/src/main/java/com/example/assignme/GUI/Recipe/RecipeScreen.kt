@@ -394,7 +394,6 @@ fun BottomBar(recipeId: String,
             Text(text = "Add to Schedule")
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
 
 
     }
