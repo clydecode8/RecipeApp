@@ -79,7 +79,6 @@ fun CreateRecipe(
     }
     MaterialTheme(colors = colors) {
 
-
         val context = LocalContext.current
         var hasCameraPermission by remember { mutableStateOf(false) }
         // State variables for the recipe fields

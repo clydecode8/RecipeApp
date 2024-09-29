@@ -142,7 +142,9 @@ fun Header(navController: NavController, userModel: UserViewModel) {
             fontWeight = FontWeight.Bold
         )
         Image(
-            painter = rememberImagePainter(userProfile.profilePictureUrl),
+            painter = rememberImagePainter(
+                data = userProfile.profilePictureUrl.takeIf { !it.isNullOrEmpty() } ?: R.drawable.profile
+            ),
             contentDescription = "Profile Picture",
             modifier = Modifier
                 .size(48.dp)

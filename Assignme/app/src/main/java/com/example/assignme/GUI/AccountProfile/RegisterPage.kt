@@ -84,6 +84,7 @@ import com.example.assignme.ViewModel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.UnsupportedApiCallException
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
@@ -106,8 +107,8 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
     var verificationId: String? by remember { mutableStateOf(null) }
     var phoneNumber by remember { mutableStateOf("") }
     var verificationCode by remember { mutableStateOf("") }
-    val pageCount = 2
-    val pagerState = rememberPagerState { pageCount }
+
+    val pagerState = rememberPagerState { 1 }
 
     var usernameError by remember { mutableStateOf<String?>(null) }
     var emailError by remember { mutableStateOf<String?>(null) }
@@ -167,9 +168,29 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
 
     fun signInGoogle() {
         coroutineScope.launch {
-            val signInIntentSender = googleAuthUiClient.signIn()
-            signInIntentSender?.let {
-                launcher.launch(IntentSenderRequest.Builder(it).build())
+            try {
+                val signInIntentSender = googleAuthUiClient.signIn()
+                // Check if One Tap is supported
+                if (signInIntentSender == null) {
+                    // Proceed to standard sign-in if One Tap is not available
+                    val standardSignInResult = googleAuthUiClient.standardGoogleRegister()
+                    handleSignInResult(standardSignInResult, navController)
+                } else {
+                    // Launch the intent for One Tap sign-in
+                    launcher.launch(IntentSenderRequest.Builder(signInIntentSender).build())
+                }
+            } catch (e: UnsupportedApiCallException) {
+                // Handle the case where One Tap is not supported
+                Log.e("SignInError", "One Tap sign-in not supported: ${e.message}")
+                // Fallback to standard sign-in
+                val standardSignInResult = googleAuthUiClient.standardGoogleSignIn()
+                handleSignInResult(standardSignInResult, navController)
+            } catch (e: Exception) {
+                // Handle any other exceptions
+                Log.e("SignInError", "Error during Google sign-in: ${e.message}")
+                // Fallback to standard sign-in
+                val standardSignInResult = googleAuthUiClient.standardGoogleSignIn()
+                handleSignInResult(standardSignInResult, navController)
             }
         }
     }
@@ -280,11 +301,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                             onClick = { coroutineScope.launch { pagerState.scrollToPage(0) } },
                             text = { Text("Email") }
                         )
-                        Tab(
-                            selected = pagerState.currentPage == 1,
-                            onClick = { coroutineScope.launch { pagerState.scrollToPage(1) } },
-                            text = { Text("Phone") }
-                        )
+
                     }
                 }
 
@@ -295,7 +312,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                         pageSize = PageSize.Fill,
                         modifier = Modifier
                             .fillMaxWidth() // Ensure the pager fills the width
-                            .height(385.dp) // Fixed height to avoid resizing
+                            .height(450.dp) // Fixed height to avoid resizing
                     ) { page ->
                         when (page) {
                             0 -> EmailRegistration(
@@ -330,64 +347,7 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                                 setPasswordError = { passwordError = it },
                                 setConfirmPasswordError = { confirmPasswordError = it }
                             )
-                            1 -> PhoneRegistration(
-                                phoneNumber = phoneNumber,
-                                code = verificationCode,
-                                onPhoneNumberChange = { phoneNumber = it },
-                                onOTPChange = { verificationCode = it },
-                                onRegister = {
-                                    if (verificationCode.isEmpty()) {
-                                        // If no OTP is entered, send the verification code
-                                        submitPhoneRegistration(
-                                            phoneNumber = phoneNumber,
-                                            context = context,
-                                            onVerificationIdReceived = { id ->
-                                                verificationId = id
-                                                dialogMessage = "Code sent successfully!"
-                                                showSuccessDialog = true
-                                            },
-                                            onValidationError = { errorMessage ->
-                                                dialogMessage = errorMessage
-                                                showErrorDialog = true
-                                            },
-                                            onFailure = { errorMessage ->
-                                                dialogMessage = errorMessage
-                                                showErrorDialog = true
-                                            },
-                                            onSuccess = {
-                                                // This onSuccess is redundant since we handle success in onVerificationIdReceived
-                                            }
-                                        )
-                                    } else {
-                                        // If OTP is entered, verify it
-                                        if (verificationId != null) {
-                                            verifyCode(
-                                                verificationId = verificationId!!,
-                                                code = verificationCode,
-                                                onSuccess = {
-                                                    dialogMessage = "Phone number verified successfully!"
-                                                    showSuccessDialog = true
-                                                },
-                                                onFailure = { errorMessage ->
-                                                    dialogMessage = errorMessage
-                                                    showErrorDialog = true
-                                                }
-                                            )
-                                        } else {
-                                            dialogMessage = "Verification ID is missing"
-                                            showErrorDialog = true
-                                        }
-                                    }
-                                },
-                                showErrorDialog = { message ->
-                                    dialogMessage = message
-                                    showErrorDialog = true
-                                },
-                                showSuccessDialog = { message ->
-                                    dialogMessage = message
-                                    showSuccessDialog = true
-                                }
-                            )
+
                         }
                     }
                 }

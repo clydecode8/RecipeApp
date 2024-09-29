@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ScrollableTabRow
 import androidx.compose.material.TextButton
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -144,6 +145,22 @@ fun ProfilePage(
                 // Profile Header
                 ProfileHeader(navController, userViewModel)
             }
+
+            // Add a button with max width above the TabRow
+            item {
+                OutlinedButton(
+                    onClick = {
+                        // Navigate to my_recipe_page with the necessary ViewModel
+                        navController.navigate("my_recipe_page")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth() // Set the button to have maximum width
+                        .padding(vertical = 8.dp) // Optional: Add vertical padding for spacing
+                ) {
+                    Text("My Recipes")
+                }
+            }
+
 
             item {
                 // TabRow for saved/created recipes

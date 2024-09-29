@@ -200,7 +200,7 @@ fun NavigationGraph(navController: NavHostController = rememberNavController(), 
         }
 
         composable("my_recipe_page") { backStackEntry ->
-            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("recipe_main_page") }
+            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("profile_page") }
             val viewModel: RecipeViewModel = viewModel(parentEntry)
             val windowInfo = rememberWidowInfo()
             MyRecipe(navController = navController, viewModel = viewModel, userViewModel, windowInfo )
