@@ -12,12 +12,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-//import androidx.compose.material.*
-//import androidx.compose.material.icons.Icons
-//import androidx.compose.material.icons.filled.Add
-//import androidx.compose.material.icons.filled.ArrowBack
-//import androidx.compose.material.icons.filled.ArrowDropDown
-//import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -317,25 +311,41 @@ fun CreateRecipe(
             // Save Button
             Button(
                 onClick = {
-                    saveRecipe(
-                        context = context,
-                        viewModel = viewModel,
-                        recipeViewModel = userModel,
-                        recipeTitle = recipeTitle,
-                        description = description,
-                        ingredients = ingredients,
-                        cookTime = "$cookTime min",
-                        servings = serves,
-                        selectedCategory = selectedCategory,
-                        instructions = instructions,
-                        imageUri = imageUri
-                    ) { success ->
-                        if (success) {
-                            // Navigate back on success
-                            navController.popBackStack()
-                        } else {
-                            // Handle failure
-                            Toast.makeText(context, "Failed to save the recipe", Toast.LENGTH_SHORT).show()
+                    // Perform validation and show Toast messages if any field is missing
+                    when {
+                        recipeTitle.isBlank() -> {
+                            Toast.makeText(context, "Recipe title cannot be empty", Toast.LENGTH_SHORT).show()
+                        }
+                        description.isBlank() -> {
+                            Toast.makeText(context, "Description cannot be empty", Toast.LENGTH_SHORT).show()
+                        }
+                        ingredients.isEmpty() || ingredients.any { it.name.isBlank() } -> {
+                            Toast.makeText(context, "Please add at least one ingredient", Toast.LENGTH_SHORT).show()
+                        }
+                        instructions.isEmpty() || instructions.any { it.isBlank() } -> {
+                            Toast.makeText(context, "Please add at least one instruction", Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {
+                            // Save the recipe if validation passes
+                            saveRecipe(
+                                context = context,
+                                viewModel = viewModel,
+                                recipeViewModel = userModel,
+                                recipeTitle = recipeTitle,
+                                description = description,
+                                ingredients = ingredients,
+                                cookTime = "$cookTime min",
+                                servings = serves,
+                                selectedCategory = selectedCategory,
+                                instructions = instructions,
+                                imageUri = imageUri
+                            ) { success ->
+                                if (success) {
+                                    navController.popBackStack() // Navigate back on success
+                                } else {
+                                    Toast.makeText(context, "Failed to save the recipe", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
                     }
                 },
@@ -662,6 +672,21 @@ fun ServesItem(serves: Int, onServeChange: (Int) -> Unit) {
             }
         }
     }
+}
+
+fun validateRecipe(
+    recipeTitle: String,
+    description: String,
+    ingredients: List<Ingredient>,
+    instructions: List<String>
+): Boolean {
+    // Check if all required fields are filled
+    val isTitleValid = recipeTitle.isNotBlank()
+    val isDescriptionValid = description.isNotBlank()
+    val hasIngredients = ingredients.isNotEmpty() && ingredients.any { it.name.isNotBlank() }
+    val hasInstructions = instructions.isNotEmpty() && instructions.any { it.isNotBlank() }
+
+    return isTitleValid && isDescriptionValid && hasIngredients && hasInstructions
 }
 
 @Composable

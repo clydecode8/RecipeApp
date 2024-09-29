@@ -10,10 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,6 +53,18 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.ByteArrayOutputStream
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.lightColors
+import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,278 +74,295 @@ fun RecipeAddScreen(
     userModel: UserViewModel,
     themeViewModel: ThemeViewModel
 ) {
-    val colors = if (isSystemInDarkTheme()) {
-        darkColors()
-    } else {
-        lightColors()
+
+    val context = LocalContext.current
+    var hasCameraPermission by remember { mutableStateOf(false) }
+    // State variables for the recipe fields
+    var recipeTitle by remember { mutableStateOf("") }
+    var serves by remember { mutableStateOf(1) }
+    var cookTime by remember { mutableStateOf(45) }
+    var ingredients by remember { mutableStateOf(listOf(Ingredient("", "", null))) }
+    var description by remember { mutableStateOf("") }
+    var instructions by remember { mutableStateOf(listOf("")) }  // Step-by-step instructions
+    var selectedCategory by remember { mutableStateOf("Lunch") } // Default category
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+
+    val categories = listOf("Breakfast", "Lunch", "Dinner", "Snack") // Category options
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri -> imageUri = uri }
+    )
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasCameraPermission = isGranted
     }
-    MaterialTheme(colors = colors) {
 
-
-        val context = LocalContext.current
-        var hasCameraPermission by remember { mutableStateOf(false) }
-        // State variables for the recipe fields
-        var recipeTitle by remember { mutableStateOf("") }
-        var serves by remember { mutableStateOf(1) }
-        var cookTime by remember { mutableStateOf(45) }
-        var ingredients by remember { mutableStateOf(listOf(Ingredient("", "", null))) }
-        var description by remember { mutableStateOf("") }
-        var instructions by remember { mutableStateOf(listOf("")) }  // Step-by-step instructions
-        var selectedCategory by remember { mutableStateOf("Lunch") } // Default category
-        var imageUri by remember { mutableStateOf<Uri?>(null) }
-        var showDialog by remember { mutableStateOf(false) }
-        val scrollState = rememberScrollState()
-
-        val categories = listOf("Breakfast", "Lunch", "Dinner", "Snack") // Category options
-
-        val imagePickerLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent(),
-            onResult = { uri -> imageUri = uri }
-        )
-
-        val permissionLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            hasCameraPermission = isGranted
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview(),
+        onResult = { bitmap ->
+            if (bitmap != null) {
+                // Save the bitmap to internal storage and update the imageUri
+                val savedUri = saveImageToInternalStorage(context, bitmap)
+                imageUri = savedUri // Set the imageUri to the saved image location
+            } else {
+                Log.e("CameraError", "Failed to capture image")
+            }
         }
+    )
 
-        val cameraLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.TakePicturePreview(),
-            onResult = { bitmap ->
-                if (bitmap != null) {
-                    // Save the bitmap to internal storage and update the imageUri
-                    val savedUri = saveImageToInternalStorage(context, bitmap)
-                    imageUri = savedUri // Set the imageUri to the saved image location
+    LaunchedEffect(Unit) {
+        hasCameraPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    // Apply MaterialTheme to ensure dark/light theme works
+    Scaffold(
+        topBar = { AppTopBar(title = "Create Recipe", navController = navController) },
+
+        ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(16.dp)
+                .verticalScroll(scrollState)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Image Box
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (imageUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(imageUri),
+                        contentDescription = "Recipe Image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 } else {
-                    Log.e("CameraError", "Failed to capture image")
+                    Text(
+                        "Upload or Take Photo",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface // Use theme color
+                    )
+                }
+                IconButton(
+                    onClick = { showDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Add Image",
+                        tint = Orange
+                    )
                 }
             }
-        )
 
-        LaunchedEffect(Unit) {
-            hasCameraPermission = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
-        }
-
-        // Apply MaterialTheme to ensure dark/light theme works
-        Scaffold(
-            topBar = { AppTopBar(title = "Create Recipe", navController = navController) },
-            bottomBar = { AppBottomNavigation(navController = navController) },
-
-            ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .padding(16.dp)
-                    .verticalScroll(scrollState)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Image Box
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (imageUri != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(imageUri),
-                            contentDescription = "Recipe Image",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Text(
-                            "Upload or Take Photo",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colors.onSurface // Use theme color
-                        )
+            if (showDialog) {
+                showImageSourceDialog(
+                    showDialog = showDialog,
+                    onDismiss = { showDialog = false },
+                    onPickFromGallery = { imagePickerLauncher.launch("image/*") },
+                    onTakePhoto = {
+                        if (hasCameraPermission) {
+                            cameraLauncher.launch(null)
+                        } else {
+                            // Request camera permission if not granted
+                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
                     }
-                    IconButton(
-                        onClick = { showDialog = true },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(40.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Add Image",
-                            tint = Orange
-                        )
-                    }
-                }
-
-                if (showDialog) {
-                    showImageSourceDialog(
-                        showDialog = showDialog,
-                        onDismiss = { showDialog = false },
-                        onPickFromGallery = { imagePickerLauncher.launch("image/*") },
-                        onTakePhoto = {
-                            if (hasCameraPermission) {
-                                cameraLauncher.launch(null)
-                            } else {
-                                // Request camera permission if not granted
-                                permissionLauncher.launch(Manifest.permission.CAMERA)
-                            }
-                        }
-                    )
-                }
-
-                // Recipe Title and Description
-                OutlinedTextField(
-                    value = recipeTitle,
-                    onValueChange = { recipeTitle = it },
-                    label = { Text("Recipe Title", color = MaterialTheme.colors.onSurface) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = Color(0xFFE23E3E),
-                        textColor = MaterialTheme.colors.onSurface,
-                        cursorColor = Color(0xFFE23E3E),
-                        focusedLabelColor = MaterialTheme.colors.onSurface,
-                        unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                        placeholderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
-                    )
                 )
+            }
 
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description", color = MaterialTheme.colors.onSurface) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = Color(0xFFE23E3E),
-                        textColor = MaterialTheme.colors.onSurface,
-                        cursorColor = Color(0xFFE23E3E),
-                        focusedLabelColor = MaterialTheme.colors.onSurface,
-                        unfocusedLabelColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                        placeholderColor = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
-                    )
+            // Recipe Title and Description
+            OutlinedTextField(
+                value = recipeTitle,
+                onValueChange = { recipeTitle = it },
+                label = { Text("Recipe Title", color = MaterialTheme.colorScheme.onSurface) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Orange,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    cursorColor = Orange,
+                    focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface, // Use focusedTextColor for text color
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface, // Use unfocusedTextColor for text color when not focused
+                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), // Placeholder color when focused
+                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) // Placeholder color when not focused
                 )
+            )
 
-
-                // Category Selector
-                Text(
-                    "Category",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colors.onSurface
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description", color = MaterialTheme.colorScheme.onSurface) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Orange,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface, // Use focusedTextColor for text color
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    cursorColor = Orange,
+                    focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Placeholder color when focused
+                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
-                CategorySelector(
-                    selectedCategory = selectedCategory,
-                    categories = categories,
-                    onCategorySelected = { selectedCategory = it }
-                )
+            )
 
-                // Serves and Cook time section
-                ServesItem(serves = serves, onServeChange = { serves = it })
-                CookTimeItem(cookTime = cookTime, onCookTimeChange = { cookTime = it })
 
-                // Ingredients Section
-                Text(
-                    "Ingredients",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = Color.Gray
-                )
-                ingredients.forEachIndexed { index, ingredient ->
-                    val caloriesPerUnit =
-                        100.0 // Assuming you fetched this from CaloriesNinja API for 100g
-                    val amountInGrams = ingredient.amount.toDoubleOrNull() ?: 0.0
-                    val calculatedCalories =
-                        (caloriesPerUnit / 100) * amountInGrams // Recalculate based on entered amount
+            // Category Selector
+            Text(
+                "Category",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            CategorySelector(
+                selectedCategory = selectedCategory,
+                categories = categories,
+                onCategorySelected = { selectedCategory = it }
+            )
 
-                    IngredientItem(
-                        name = ingredient.name,
-                        quantity = ingredient.amount,
-                        caloriesPerUnit = caloriesPerUnit,
-                        onNameChange = { newName ->
-                            ingredients = ingredients.toMutableList().also {
-                                it[index] = it[index].copy(name = newName)
-                            }
-                        },
-                        onQuantityChange = { newQuantity ->
-                            ingredients = ingredients.toMutableList().also {
-                                it[index] = it[index].copy(amount = newQuantity)
-                            }
-                        },
-                        calories = calculatedCalories, // Pass recalculated calories
-                        onRemove = {
-                            ingredients = ingredients.toMutableList().also {
-                                it.removeAt(index)
-                            }
-                        }
-                    )
-                }
-                AddNewIngredientButton {
-                    ingredients = ingredients + Ingredient("", "", 0.0)
-                }
+            // Serves and Cook time section
+            ServesItem(serves = serves, onServeChange = { serves = it })
+            CookTimeItem(cookTime = cookTime, onCookTimeChange = { cookTime = it })
 
-                // Instructions Section
-                Text(
-                    "Instructions",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colors.onSurface
-                )
-                instructions.forEachIndexed { index, instruction ->
-                    InstructionItem(
-                        instruction = instruction,
-                        onInstructionChange = { newInstruction ->
-                            instructions = instructions.toMutableList().also {
-                                it[index] = newInstruction
-                            }
-                        },
-                        onRemove = {
-                            instructions = instructions.toMutableList().also {
-                                it.removeAt(index)
-                            }
-                        }
-                    )
-                }
+            // Ingredients Section
+            Text(
+                "Ingredients",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.Gray
+            )
+            ingredients.forEachIndexed { index, ingredient ->
+                val caloriesPerUnit =
+                    100.0 // Assuming you fetched this from CaloriesNinja API for 100g
+                val amountInGrams = ingredient.amount.toDoubleOrNull() ?: 0.0
+                val calculatedCalories =
+                    (caloriesPerUnit / 100) * amountInGrams // Recalculate based on entered amount
 
-                AddNewInstructionButton {
-                    instructions = instructions + ""
-                }
-
-                // Save Button
-                Button(
-                    onClick = {
-                        saveRecipe(
-                            context = context,
-                            viewModel = viewModel,
-                            recipeViewModel = userModel,
-                            recipeTitle = recipeTitle,
-                            description = description,
-                            ingredients = ingredients,
-                            cookTime = "$cookTime min",
-                            servings = serves,
-                            selectedCategory = selectedCategory,
-                            instructions = instructions,
-                            imageUri = imageUri
-                        ) { success ->
-                            if (success) {
-                                // Navigate back on success
-                                navController.popBackStack()
-                            } else {
-                                // Handle failure
-                                // Show a message or take appropriate action
-                            }
+                IngredientItem(
+                    name = ingredient.name,
+                    quantity = ingredient.amount,
+                    caloriesPerUnit = caloriesPerUnit,
+                    onNameChange = { newName ->
+                        ingredients = ingredients.toMutableList().also {
+                            it[index] = it[index].copy(name = newName)
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Orange)
-                ) {
-                    Text("Save my recipes", color = Color.White)
-                }
-
-                Spacer(modifier = Modifier.height(25.dp))
+                    onQuantityChange = { newQuantity ->
+                        ingredients = ingredients.toMutableList().also {
+                            it[index] = it[index].copy(amount = newQuantity)
+                        }
+                    },
+                    calories = calculatedCalories, // Pass recalculated calories
+                    onRemove = {
+                        ingredients = ingredients.toMutableList().also {
+                            it.removeAt(index)
+                        }
+                    }
+                )
             }
+            AddNewIngredientButton {
+                ingredients = ingredients + Ingredient("", "", 0.0)
+            }
+
+            // Instructions Section
+            Text(
+                "Instructions",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            instructions.forEachIndexed { index, instruction ->
+                InstructionItem(
+                    instruction = instruction,
+                    onInstructionChange = { newInstruction ->
+                        instructions = instructions.toMutableList().also {
+                            it[index] = newInstruction
+                        }
+                    },
+                    onRemove = {
+                        instructions = instructions.toMutableList().also {
+                            it.removeAt(index)
+                        }
+                    }
+                )
+            }
+
+            AddNewInstructionButton {
+                instructions = instructions + ""
+            }
+
+            // Save Button
+            Button(
+                onClick = {
+                    // Perform validation and show Toast messages if any field is missing
+                    when {
+                        recipeTitle.isBlank() -> {
+                            Toast.makeText(context, "Recipe title cannot be empty", Toast.LENGTH_SHORT).show()
+                        }
+                        description.isBlank() -> {
+                            Toast.makeText(context, "Description cannot be empty", Toast.LENGTH_SHORT).show()
+                        }
+                        ingredients.isEmpty() || ingredients.any { it.name.isBlank() } -> {
+                            Toast.makeText(context, "Please add at least one ingredient", Toast.LENGTH_SHORT).show()
+                        }
+                        instructions.isEmpty() || instructions.any { it.isBlank() } -> {
+                            Toast.makeText(context, "Please add at least one instruction", Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {
+                            // Save the recipe if validation passes
+                            com.example.assignme.GUI.Recipe.saveRecipe(
+                                context = context,
+                                viewModel = viewModel,
+                                recipeViewModel = userModel,
+                                recipeTitle = recipeTitle,
+                                description = description,
+                                ingredients = ingredients,
+                                cookTime = "$cookTime min",
+                                servings = serves,
+                                selectedCategory = selectedCategory,
+                                instructions = instructions,
+                                imageUri = imageUri
+                            ) { success ->
+                                if (success) {
+                                    navController.popBackStack() // Navigate back on success
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Failed to save the recipe",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Orange)
+            ) {
+                Text("Upload recipe", color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(25.dp))
         }
     }
+
 }
 
 fun saveRecipe(
@@ -511,12 +536,13 @@ fun CategorySelector(
             modifier = Modifier.fillMaxWidth()// Ensure the dropdown width matches the button width
         ) {
             categories.forEach { category ->
-                DropdownMenuItem(onClick = {
-                    onCategorySelected(category)
-                    expanded = false
-                }) {
-                    Text(text = category)
-                }
+                DropdownMenuItem(
+                    text = { Text(text = category) },
+                    onClick = {
+                        onCategorySelected(category)
+                        expanded = false
+                    }
+                )
             }
         }
     }
@@ -525,6 +551,7 @@ fun CategorySelector(
 
 
 // Instruction Item Composable (For each step)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InstructionItem(
     instruction: String,
@@ -597,8 +624,10 @@ fun ServesItem(serves: Int, onServeChange: (Int) -> Unit) {
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         shape = RoundedCornerShape(10.dp),
-        backgroundColor = Color(0xFF424242) // Light gray background
-    ) {
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF424242) // Light gray background
+        )
+    ){
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -656,7 +685,9 @@ fun CookTimeItem(cookTime: Int, onCookTimeChange: (Int) -> Unit) {
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         shape = RoundedCornerShape(10.dp),
-        backgroundColor = Color(0xFF424242) // Light gray background
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF424242) // Light gray background
+        ) // Light gray background
     ) {
         Row(
             modifier = Modifier
@@ -710,6 +741,7 @@ fun CookTimeItem(cookTime: Int, onCookTimeChange: (Int) -> Unit) {
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("DefaultLocale")
 @Composable
 fun IngredientItem(
