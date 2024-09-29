@@ -618,14 +618,14 @@ fun updateFailedLoginAttempt(email: String, callback: (Int) -> Unit) {
             db.collection("loginAttempts").document(email).get()
                 .addOnSuccessListener { document ->
                     val attemptCount = document.getLong("attemptCount")?.toInt() ?: 0
-                    // Calculate remaining attempts (7 is the limit)
-                    val remainingAttempts = maxOf(0, 7 - attemptCount)
+                    // Calculate remaining attempts (3 is the limit)
+                    val remainingAttempts = maxOf(0, 3 - attemptCount)
                     callback(remainingAttempts) // Call the callback with the number of attempts left
                 }
         }
         .addOnFailureListener { exception ->
             Log.e("LoginAttempts", "Failed to update login attempts: ${exception.localizedMessage}")
-            callback(7) // In case of failure, assume all attempts are available
+            callback(3) // In case of failure, assume all attempts are available
         }
 }
 
