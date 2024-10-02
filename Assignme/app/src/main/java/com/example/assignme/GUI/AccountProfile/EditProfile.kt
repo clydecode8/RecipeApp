@@ -128,6 +128,7 @@ fun EditProfileScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { selectedImageUri ->
             profilePictureUri = selectedImageUri
+            newProfilePictureUri = profilePictureUri
         }
     }
 
@@ -226,8 +227,7 @@ fun EditProfileScreen(
                         // Perform re-authentication
                         if (user != null) {
                             // For Email/Password Sign-In
-                            val credential =
-                                EmailAuthProvider.getCredential(user.email!!, enteredPassword)
+                            val credential = EmailAuthProvider.getCredential(user.email!!, enteredPassword)
 
                             user.reauthenticate(credential).addOnCompleteListener { reAuthTask ->
                                 if (reAuthTask.isSuccessful) {

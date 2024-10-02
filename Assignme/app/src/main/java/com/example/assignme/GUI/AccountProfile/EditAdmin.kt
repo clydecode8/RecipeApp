@@ -244,7 +244,7 @@ fun EditAdminProfileScreen(
                                     email = email,
                                     phoneNumber = phoneNumber,
                                     country = country,
-                                    gender = gender,
+                                    gender = gender
                                 ) { success ->
                                     if (success) {
                                         showSuccessDialog = true
