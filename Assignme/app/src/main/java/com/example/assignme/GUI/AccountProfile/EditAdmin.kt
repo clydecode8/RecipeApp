@@ -119,6 +119,7 @@ fun EditAdminProfileScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { selectedImageUri ->
             profilePictureUri = selectedImageUri
+            newProfilePictureUri = profilePictureUri
         }
     }
 
