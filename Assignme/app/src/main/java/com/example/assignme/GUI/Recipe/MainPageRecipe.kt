@@ -212,7 +212,7 @@ fun TrendingSection(recipes: List<Recipes>, navController: NavController, window
         WindowInfo.WindowType.Medium -> 160.dp
         WindowInfo.WindowType.Expanded -> 200.dp
     }
-    val authorId = "LivBmlpHsfetYgJ99iCGHEUvb8V2"
+    val authorId = "rxpA9YJO2dVB59oozIeCxzGyobs1"
     val authorRecipes = remember { recipes.filter { it.authorId == authorId } }
 
     val shuffledRecipes = remember { authorRecipes.shuffled() }  // Shuffle recipes for randomness

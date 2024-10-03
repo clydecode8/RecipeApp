@@ -82,7 +82,7 @@ class RecipeViewModel : ViewModel() {
     fun fetchCategories() {
         viewModelScope.launch {
             try {
-                val authorId = "LivBmlpHsfetYgJ99iCGHEUvb8V2"
+                val authorId = "rxpA9YJO2dVB59oozIeCxzGyobs1"
 
                 val snapshot = firestore.collection("recipes").whereEqualTo("authorId", authorId)  .get().await()
                 val categoriesSet = mutableSetOf<String>()
