@@ -49,9 +49,9 @@ fun AppFirstPage(navController: NavController, userViewModel: UserProfileProvide
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.Black)
             .safeContentPadding()
             .statusBarsPadding()
-            .background(Color.Black)
     ) {
         Image(
             painter = painterResource(id = R.drawable.background),
