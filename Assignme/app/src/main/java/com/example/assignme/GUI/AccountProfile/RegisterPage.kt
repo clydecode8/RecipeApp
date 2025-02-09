@@ -34,6 +34,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.darkColors
 import androidx.compose.material.icons.Icons
@@ -68,9 +69,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -214,7 +218,6 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
         )
     }
 
-
     fun handlePhoneRegistration() {
         submitRegistration(
             name = username,
@@ -273,26 +276,6 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
                         fontWeight = FontWeight.Bold,
                         lineHeight = 40.sp // Set the line height here
                     )
-                }
-
-                item {
-                    // Tabs for Registration Forms
-                    TabRow(
-                        selectedTabIndex = pagerState.currentPage,
-                        indicator = { tabPositions ->
-                            TabRowDefaults.Indicator(
-                                Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                                color = Orange// 设置为橙色
-                            )
-                        }
-                    ) {
-                        Tab(
-                            selected = pagerState.currentPage == 0,
-                            onClick = { coroutineScope.launch { pagerState.scrollToPage(0) } },
-                            text = { Text("Email", color=Orange) }
-                        )
-
-                    }
                 }
 
                 item {
@@ -451,6 +434,26 @@ fun RegisterPage(navController: NavController, userViewModel: UserProfileProvide
 
                         }
 
+                    }
+                }
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Already have an account? ",
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = "Login now",
+                            color = Color.Blue,
+                            fontSize = 12.sp,
+                            modifier = Modifier.clickable {
+                                // Navigate to Login Page
+                                navController.navigate("login_page")
+                            }
+                        )
                     }
                 }
             }
@@ -754,8 +757,6 @@ fun PhoneRegistration(
         }
     }
 }
-
-
 
 fun submitRegistration(
     name: String,
